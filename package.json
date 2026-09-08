@@ -1,0 +1,41 @@
+{
+  "name": "aula-libera",
+  "version": "1.0.0",
+  "description": "Portale per la prenotazione di aule e laboratori universitari — progetto di Ingegneria del Software",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "avvia": "node server.js",
+    "sviluppo": "node --watch server.js",
+    "popola": "node seed/popolaDatabase.js",
+    "test": "jest --runInBand",
+    "test:unita": "jest test/unita --runInBand",
+    "test:integrazione": "jest test/integrazione --runInBand",
+    "test:copertura": "jest --runInBand --coverage"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.1.4",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/client/"
+    ]
+  }
+}

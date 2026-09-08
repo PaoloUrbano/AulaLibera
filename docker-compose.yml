@@ -1,0 +1,19 @@
+services:
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URL: mongodb://db:27017/aulalibera
+      JWT_SEGRETO: sviluppo-non-usare-in-produzione
+    depends_on:
+      - db
+
+  db:
+    image: mongo:7
+    volumes:
+      - datimongo:/data/db
+
+volumes:
+  datimongo:
