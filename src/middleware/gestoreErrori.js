@@ -37,7 +37,6 @@ function rottaNonTrovata(richiesta, risposta) {
 
 // Middleware finale della catena: Express lo riconosce come gestore degli errori
 // dalla presenza di quattro parametri.
-// eslint-disable-next-line no-unused-vars
 function gestoreErrori(errore, richiesta, risposta, successivo) {
   const codice = codiceHttpPer(errore);
 
