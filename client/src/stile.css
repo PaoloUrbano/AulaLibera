@@ -1,0 +1,239 @@
+/* Foglio di stile essenziale: l'interfaccia deve essere leggibile e usabile, non
+   elaborata. Nessun framework grafico, per non aggiungere dipendenze da giustificare. */
+
+:root {
+  --colore-testo: #1c2733;
+  --colore-tenue: #5a6b7c;
+  --colore-bordo: #d3dae1;
+  --colore-sfondo: #f4f6f8;
+  --colore-accento: #1f4e79;
+  --colore-errore: #a32020;
+  --colore-successo: #1f6b34;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+  color: var(--colore-testo);
+  background: var(--colore-sfondo);
+  line-height: 1.5;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--colore-accento);
+  color: #fff;
+}
+
+.barra a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.marchio {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.collegamenti {
+  display: flex;
+  gap: 1rem;
+}
+
+.collegamenti a.active {
+  text-decoration: underline;
+}
+
+.identita {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.contenuto {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+.riquadro {
+  background: #fff;
+  border: 1px solid var(--colore-bordo);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stretto {
+  max-width: 420px;
+  margin: 2rem auto;
+}
+
+.riga {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+label.casella {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+input,
+select {
+  padding: 0.4rem;
+  border: 1px solid var(--colore-bordo);
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+}
+
+button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--colore-accento);
+  border-radius: 4px;
+  background: var(--colore-accento);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  margin-right: 0.4rem;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.due-colonne {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .due-colonne {
+    grid-template-columns: 1fr;
+  }
+}
+
+.elenco-risorse {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.elenco-risorse button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: #fff;
+  color: var(--colore-testo);
+  border-color: var(--colore-bordo);
+}
+
+.risorsa.selezionata button {
+  border-color: var(--colore-accento);
+  border-width: 2px;
+}
+
+.codice {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--colore-tenue);
+}
+
+.dettagli {
+  font-size: 0.85rem;
+  color: var(--colore-tenue);
+}
+
+.tabella {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--colore-bordo);
+}
+
+.tabella th,
+.tabella td {
+  border-bottom: 1px solid var(--colore-bordo);
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.9rem;
+}
+
+.schede {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.scheda {
+  background: #fff;
+  color: var(--colore-accento);
+}
+
+.scheda.attiva {
+  background: var(--colore-accento);
+  color: #fff;
+}
+
+.avviso {
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.avviso-errore {
+  background: #fbeaea;
+  color: var(--colore-errore);
+}
+
+.avviso-successo {
+  background: #e8f4ec;
+  color: var(--colore-successo);
+}
+
+.vuoto,
+.caricamento {
+  color: var(--colore-tenue);
+  font-style: italic;
+}
