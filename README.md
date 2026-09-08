@@ -263,6 +263,8 @@ npm run test:integrazione # rotte su MongoDB in memoria, incluso il test di conc
 npm run test:copertura    # con il rapporto di copertura
 ```
 
+La suite conta 105 test e copre il 91% delle istruzioni di `src/`.
+
 I test di integrazione usano `mongodb-memory-server`: non serve un MongoDB installato, ma
 il primo avvio scarica il binario di MongoDB.
 
@@ -276,6 +278,7 @@ il primo avvio scarica il binario di MongoDB.
 | `test/integrazione/autenticazione.test.js` | Registrazione, accesso, protezione delle rotte |
 | `test/integrazione/risorse.test.js` | Filtro per ruolo, gestione, abilitazioni |
 | `test/integrazione/prenotazioni.test.js` | Regole di prenotazione, sovrapposizioni, annullamento |
+| `test/integrazione/disponibilita.test.js` | Slot occupati, filtro per fascia oraria, eliminazione di una risorsa prenotata |
 | `test/integrazione/concorrenza.test.js` | **Mutua esclusione con dieci richieste simultanee** |
 
 ---

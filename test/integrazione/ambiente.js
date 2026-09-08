@@ -83,6 +83,14 @@ function domaniAlle(ore, minuti = 0) {
   return istante;
 }
 
+// Il giorno di domani nella forma AAAA-MM-GG attesa dai parametri delle rotte.
+function giornoDomani() {
+  const istante = domaniAlle(0);
+  const mese = String(istante.getMonth() + 1).padStart(2, '0');
+  const giorno = String(istante.getDate()).padStart(2, '0');
+  return `${istante.getFullYear()}-${mese}-${giorno}`;
+}
+
 module.exports = {
   avviaAmbiente,
   chiudiAmbiente,
@@ -92,5 +100,6 @@ module.exports = {
   creaAula,
   creaLaboratorio,
   domaniAlle,
+  giornoDomani,
   creaApplicazione
 };
