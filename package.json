@@ -36,6 +36,9 @@
     "coveragePathIgnorePatterns": [
       "/node_modules/",
       "/client/"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/configurazione.js"
     ]
   }
 }
