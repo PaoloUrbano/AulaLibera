@@ -75,6 +75,17 @@ richiesta HTTP
 | Docente | sì | sì | sì, senza vincoli |
 | Amministratore | non prenota: gestisce risorse, configurazione e abilitazioni, e può annullare qualsiasi prenotazione |
 
+### Il fuso orario è parte del dominio
+
+Gli orari di apertura e chiusura sono orari di Bari, non istanti UTC, e le regole che li
+applicano confrontano ore locali. Il server deve quindi girare nel fuso dell'ateneo: se
+girasse in UTC leggerebbe come le 07:00 le 09:00 inviate dal browser e respingerebbe come
+fuori orario una prenotazione valida.
+
+La dipendenza è dichiarata dove viene decisa — `ENV TZ=Europe/Rome` nel `Dockerfile` e
+nel `docker-compose.yml` — e verificata all'avvio da `verificaFusoOrario` in `server.js`,
+che segnala in console se il fuso attivo non è quello atteso.
+
 ### Vincoli su ogni prenotazione
 
 - durata compresa fra `durataMinimaMinuti` e `durataMassimaMinuti` **della risorsa**;
@@ -406,3 +417,4 @@ lette e discusse, e l'interfaccia usa CSS scritto a mano.
 | `Occupazione` separata da `Prenotazione` | Controllo di sovrapposizione sulle date | È ciò che rende la mutua esclusione un vincolo del database anziché un controllo applicativo soggetto a corsa critica |
 | Compensazione esplicita in caso di conflitto | Transazione | Le transazioni di MongoDB richiedono un *replica set*; la compensazione funziona anche sull'istanza singola usata in sviluppo |
 | Utente ricaricato dal database a ogni richiesta | Ruolo letto dal token | Ruolo e abilitazioni possono cambiare dopo l'emissione del token: fidarsi del suo contenuto significherebbe applicare permessi obsoleti |
+| Fuso orario fissato nell'immagine | Conversioni di fuso nel codice | Gli orari del dominio sono orari locali di un solo ateneo: imporre il fuso al processo è più semplice e meno soggetto a errori che convertire a ogni confronto |

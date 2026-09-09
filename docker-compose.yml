@@ -7,6 +7,10 @@ services:
     environment:
       MONGO_URL: mongodb://db:27017/aulalibera
       JWT_SEGRETO: sviluppo-non-usare-in-produzione
+      # Gli orari di apertura e chiusura sono orari di Bari, non istanti UTC: senza
+      # questa dichiarazione il contenitore girerebbe in UTC e rifiuterebbe come fuori
+      # orario prenotazioni perfettamente valide.
+      TZ: Europe/Rome
     depends_on:
       - db
 

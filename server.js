@@ -12,6 +12,9 @@ const { rottaNonTrovata, gestoreErrori } = require('./src/middleware/gestoreErro
 
 const CARTELLA_FRONTEND = path.join(__dirname, 'client', 'build');
 
+// Fuso orario in cui vanno interpretati gli orari del dominio.
+const FUSO_ORARIO_ATENEO = 'Europe/Rome';
+
 // La costruzione dell'applicazione è separata dall'avvio del server e dalla connessione
 // al database: i test di integrazione compongono l'applicazione contro un'istanza di
 // MongoDB in memoria, senza mettersi in ascolto su una porta.
@@ -70,9 +73,31 @@ async function preparaIndici() {
   );
 }
 
+// L'orario di apertura dell'ateneo è un orario di Bari, non un istante UTC: le regole
+// di dominio sugli orari confrontano ore locali. Se il processo girasse in un fuso
+// diverso da quello dell'ateneo respingerebbe come fuori orario prenotazioni valide —
+// per esempio, con il server in UTC, le 09:00 arrivate dal browser verrebbero lette
+// come le 07:00. La dipendenza è dichiarata nell'immagine e verificata qui all'avvio.
+function verificaFusoOrario() {
+  const fusoAttivo = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  if (fusoAttivo !== FUSO_ORARIO_ATENEO) {
+    console.warn(
+      `Attenzione: il server sta usando il fuso orario ${fusoAttivo} anziché ${FUSO_ORARIO_ATENEO}. ` +
+        'Impostare la variabile di ambiente TZ, altrimenti gli orari di apertura e ' +
+        'chiusura verranno applicati sul fuso sbagliato.'
+    );
+    return;
+  }
+
+  console.log(`Fuso orario del dominio: ${fusoAttivo}`);
+}
+
 async function avvia() {
   const urlMongo = process.env.MONGO_URL || 'mongodb://localhost:27017/aulalibera';
   const porta = Number(process.env.PORTA) || 3000;
+
+  verificaFusoOrario();
 
   if (!process.env.JWT_SEGRETO) {
     console.error('Variabile di ambiente JWT_SEGRETO non impostata: avvio interrotto');
@@ -94,4 +119,11 @@ if (require.main === module) {
   });
 }
 
-module.exports = { creaApplicazione, connettiAlDatabase, preparaIndici, avvia };
+module.exports = {
+  FUSO_ORARIO_ATENEO,
+  creaApplicazione,
+  connettiAlDatabase,
+  preparaIndici,
+  verificaFusoOrario,
+  avvia
+};

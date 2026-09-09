@@ -2,8 +2,11 @@
 // Sono isolate qui perché servono a più servizi e perché, non dipendendo da modelli
 // né da Express, sono verificabili con test di unità diretti.
 //
-// Tutti i calcoli usano il fuso orario locale del server: gli orari di apertura e
-// chiusura dell'ateneo sono orari locali, non istanti UTC.
+// Tutti i calcoli usano il fuso orario locale del processo. È una dipendenza reale e
+// va tenuta presente: gli orari di apertura e chiusura dell'ateneo sono orari di Bari,
+// non istanti UTC, quindi il server deve girare nel fuso dell'ateneo. La variabile di
+// ambiente TZ lo impone, il Dockerfile la valorizza e server.js verifica all'avvio che
+// il fuso attivo sia quello atteso.
 
 const MINUTI_IN_UN_GIORNO = 24 * 60;
 const MILLISECONDI_IN_UN_MINUTO = 60 * 1000;
