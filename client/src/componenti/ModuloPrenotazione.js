@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import Avviso from './Avviso';
-import MappaSlot from './MappaSlot';
+import GrigliaOraria from './GrigliaOraria';
 import { formattaDurata, formattaOra } from '../formato';
 import { prenotazioni, risorse as apiRisorse } from '../servizi/api';
 
@@ -15,10 +15,9 @@ function componiIstante(giorno, orario) {
 }
 
 // Costruisce la giornata come sequenza di intervalli prenotabili, dall'apertura alla
-// chiusura. Ogni intervallo conserva l'ora in cui comincia e quella in cui finisce:
-// sono le due informazioni che l'utente legge sulla mappa. L'ultimo intervallo è quello
-// che termina esattamente alla chiusura, uno che la sforerebbe non viene proposto.
-function costruisciCaselle(configurazione, giorno, slotOccupati) {
+// chiusura. L'ultimo intervallo è quello che termina esattamente alla chiusura: uno che
+// la sforerebbe non viene proposto affatto.
+function costruisciFasce(configurazione, giorno, slotOccupati) {
   const apertura = componiIstante(giorno, configurazione.orarioApertura);
   const chiusura = componiIstante(giorno, configurazione.orarioChiusura);
   const passo = configurazione.durataSlotMinuti * MILLISECONDI_IN_UN_MINUTO;
@@ -28,21 +27,24 @@ function costruisciCaselle(configurazione, giorno, slotOccupati) {
   );
   const adesso = Date.now();
 
-  const caselle = [];
+  const fasce = [];
   for (
     let istante = apertura.getTime();
     istante + passo <= chiusura.getTime();
     istante += passo
   ) {
-    caselle.push({
-      inizio: new Date(istante),
+    const inizio = new Date(istante);
+    fasce.push({
+      inizio,
       oraInizio: formattaOra(istante),
       oraFine: formattaOra(istante + passo),
+      // Le ore piene reggono i marcatori e le linee più marcate della griglia.
+      iniziaOra: inizio.getMinutes() === 0,
       occupato: occupati.has(istante),
       passato: istante < adesso
     });
   }
-  return caselle;
+  return fasce;
 }
 
 export default function ModuloPrenotazione({
@@ -64,7 +66,7 @@ export default function ModuloPrenotazione({
   const slotMinimi = Math.ceil(risorsa.durataMinimaMinuti / passoMinuti);
   const slotMassimi = Math.floor(risorsa.durataMassimaMinuti / passoMinuti);
 
-  const caselle = costruisciCaselle(configurazione, giorno, slotOccupati);
+  const fasce = costruisciFasce(configurazione, giorno, slotOccupati);
 
   useEffect(() => {
     let annullato = false;
@@ -86,12 +88,12 @@ export default function ModuloPrenotazione({
   const durataScelta =
     selezione.inizio === null ? 0 : (selezione.fine - selezione.inizio) * passoMinuti;
   const istanteInizio =
-    selezione.inizio === null ? null : caselle[selezione.inizio].inizio;
+    selezione.inizio === null ? null : fasce[selezione.inizio].inizio;
   const istanteFine =
     selezione.inizio === null
       ? null
       : new Date(
-          caselle[selezione.fine - 1].inizio.getTime() +
+          fasce[selezione.fine - 1].inizio.getTime() +
             passoMinuti * MILLISECONDI_IN_UN_MINUTO
         );
 
@@ -101,7 +103,7 @@ export default function ModuloPrenotazione({
     impostaSuccesso('');
 
     if (selezione.inizio === null) {
-      impostaErrore("Scegli prima l'orario sulla mappa della giornata.");
+      impostaErrore("Scegli prima l'orario sulla griglia della giornata.");
       return;
     }
 
@@ -122,7 +124,7 @@ export default function ModuloPrenotazione({
         onPrenotata();
       }
     } catch (problema) {
-      // Il conflitto è la sola risposta che rende obsoleta la mappa mostrata: qualcuno
+      // Il conflitto è la sola risposta che rende obsoleta la griglia mostrata: qualcuno
       // ha prenotato mentre l'utente stava scegliendo, e va ricaricata.
       if (problema.codice === 409) {
         impostaSelezione({ inizio: null, fine: null });
@@ -140,7 +142,7 @@ export default function ModuloPrenotazione({
   // La durata degli intervalli e le durate della risorsa sono impostate dall'amministratore
   // in due schermate diverse e possono risultare incompatibili: con intervalli da 45
   // minuti una risorsa che ammette al massimo un'ora non avrebbe alcuna durata valida.
-  // Meglio dirlo che lasciare l'utente davanti a una mappa in cui nulla si può scegliere.
+  // Meglio dirlo che lasciare l'utente davanti a una griglia in cui nulla si può scegliere.
   if (slotMassimi < slotMinimi) {
     return (
       <div className="riquadro">
@@ -148,9 +150,9 @@ export default function ModuloPrenotazione({
         <p className="regola">
           Questa risorsa al momento non è prenotabile: la durata ammessa va da{' '}
           {formattaDurata(risorsa.durataMinimaMinuti)} a{' '}
-          {formattaDurata(risorsa.durataMassimaMinuti)}, ma gli orari sono divisi in
-          intervalli da {passoMinuti} minuti e nessuna durata valida ci rientra. Occorre
-          segnalarlo all'amministratore.
+          {formattaDurata(risorsa.durataMassimaMinuti)}, ma la giornata è divisa in fasce
+          da {passoMinuti} minuti e nessuna durata valida ci rientra. Occorre segnalarlo
+          all'amministratore.
         </p>
       </div>
     );
@@ -163,16 +165,16 @@ export default function ModuloPrenotazione({
       <p className="regola">
         Puoi prenotare da un minimo di{' '}
         <strong>{formattaDurata(risorsa.durataMinimaMinuti)}</strong> a un massimo di{' '}
-        <strong>{formattaDurata(risorsa.durataMassimaMinuti)}</strong>. Ogni riquadro è
-        una fascia di {passoMinuti} minuti e riporta l'ora in cui comincia e quella in cui
-        finisce.
+        <strong>{formattaDurata(risorsa.durataMassimaMinuti)}</strong>, in fasce di{' '}
+        {passoMinuti} minuti.
       </p>
 
-      <MappaSlot
-        caselle={caselle}
+      <GrigliaOraria
+        fasce={fasce}
+        orarioChiusura={configurazione.orarioChiusura}
         selezione={selezione}
-        slotMinimi={slotMinimi}
-        slotMassimi={slotMassimi}
+        minimo={slotMinimi}
+        massimo={slotMassimi}
         durataMinimaMinuti={risorsa.durataMinimaMinuti}
         onSelezione={impostaSelezione}
         onAvviso={impostaErrore}
@@ -182,8 +184,8 @@ export default function ModuloPrenotazione({
         {selezione.inizio === null ? (
           <>
             Fai clic sull'ora di inizio: la prenotazione parte subito con la durata minima
-            di {formattaDurata(risorsa.durataMinimaMinuti)}. Un secondo clic su un orario
-            successivo la allunga fino a lì.
+            di {formattaDurata(risorsa.durataMinimaMinuti)}. Un secondo clic più in basso
+            la allunga fino a quell'orario.
           </>
         ) : (
           <>

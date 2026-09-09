@@ -323,7 +323,7 @@ aula-libera/
     └── src/
         ├── App.js
         ├── formato.js           formattazione di durate e orari
-        ├── componenti/          fra cui MappaSlot, la griglia della giornata
+        ├── componenti/          fra cui GrigliaOraria, la vista giorno
         ├── pagine/
         ├── contesti/            contesto di autenticazione
         └── servizi/             chiamate HTTP verso il backend
@@ -345,16 +345,27 @@ docente condividono la **stessa pagina di prenotazione**: a cambiare è l'elenco
 risorse, che il backend restituisce già filtrato. L'amministratore raggiunge una sezione
 di gestione dedicata, il cui collegamento compare solo a lui.
 
-**La scelta della fascia oraria avviene su una mappa**, non su due menù a tendina: la
-giornata è disegnata come una griglia di riquadri e ognuno riporta l'ora in cui la fascia
-comincia e quella in cui finisce, perché è la fine a interessare chi prenota. Lo stato di
-ogni riquadro — libero, già prenotato, orario passato, fuori dalla durata consentita — si
-legge a colpo d'occhio. Il primo clic applica subito la durata minima della risorsa, un
-secondo clic allunga la prenotazione, e gli orari su cui non può terminare vengono
-attenuati: il vincolo si vede invece di doverlo ricordare.
+**La scelta della fascia oraria avviene su una griglia oraria**, non su due menù a
+tendina. La griglia riprende l'impianto della vista giorno dei calendari: una colonna di
+marcatori orari e, accanto, una banda per ogni intervallo prenotabile, alta in proporzione
+alla durata. Il dettaglio che conta è che **gli orari sono scritti sulle linee che separano
+le bande, non dentro di esse**: sono confini, e la selezione si vede cominciare su una
+linea e terminare su un'altra.
 
-I testi rivolti a chi prenota non nominano mai gli slot né i riquadri e parlano soltanto
-di orari e di durate — «dalle 08:00 alle 11:00, 3 ore» — perché è nei termini in cui il
+Il primo tentativo etichettava ogni riquadro con la propria ora di inizio, e imponeva un
+passaggio mentale: il riquadro marcato 10:30 copre il tempo fino alle 11:00, quindi per
+terminare alle 11:00 bisogna scegliere quello. La vista giorno dei calendari risolve da
+sempre questa ambiguità mettendo l'etichetta sul confine, e la griglia la adotta; per lo
+stesso motivo porta un marcatore anche sull'orario di chiusura, che altrimenti sarebbe
+l'unico confine non scritto.
+
+Il primo clic applica subito la durata minima della risorsa, un secondo clic allunga la
+prenotazione, e gli orari su cui non può terminare vengono attenuati: il vincolo si vede
+invece di doverlo ricordare. Le fasce già prenotate sono campite a righe oltre che
+colorate, perché la sola tinta non basterebbe a chi ha difficoltà di distinzione cromatica.
+
+I testi rivolti a chi prenota non nominano mai gli slot né le bande e parlano soltanto di
+orari e di durate — «dalle 11:00 alle 14:00, 3 ore» — perché è nei termini in cui il
 problema si presenta all'utente che l'interfaccia deve esprimersi. La discretizzazione in
 slot resta un fatto interno al sistema, di cui l'utente non deve sapere nulla.
 
