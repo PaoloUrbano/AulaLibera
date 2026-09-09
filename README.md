@@ -346,13 +346,17 @@ risorse, che il backend restituisce già filtrato. L'amministratore raggiunge un
 di gestione dedicata, il cui collegamento compare solo a lui.
 
 **La scelta della fascia oraria avviene su una mappa**, non su due menù a tendina: la
-giornata è disegnata come una griglia di caselle da `durataSlotMinuti` ciascuna, e lo
-stato di ognuna (libera, già prenotata, trascorsa, incompatibile con le durate della
-risorsa) si legge a colpo d'occhio. Il primo clic seleziona subito il numero minimo di
-caselle ammesso dalla risorsa, un secondo clic estende la selezione, e le caselle che non
-possono chiudere una prenotazione valida vengono attenuate. Così la granularità dello
-slot e la durata minima restano due grandezze distinte e visibili, mentre esprimerle solo
-a parole le faceva confondere.
+giornata è disegnata come una griglia di riquadri e ognuno riporta l'ora in cui la fascia
+comincia e quella in cui finisce, perché è la fine a interessare chi prenota. Lo stato di
+ogni riquadro — libero, già prenotato, orario passato, fuori dalla durata consentita — si
+legge a colpo d'occhio. Il primo clic applica subito la durata minima della risorsa, un
+secondo clic allunga la prenotazione, e gli orari su cui non può terminare vengono
+attenuati: il vincolo si vede invece di doverlo ricordare.
+
+I testi rivolti a chi prenota non nominano mai gli slot né i riquadri e parlano soltanto
+di orari e di durate — «dalle 08:00 alle 11:00, 3 ore» — perché è nei termini in cui il
+problema si presenta all'utente che l'interfaccia deve esprimersi. La discretizzazione in
+slot resta un fatto interno al sistema, di cui l'utente non deve sapere nulla.
 
 **Nascondere un pulsante non è autorizzazione.** Il frontend evita di mostrare comandi che
 verrebbero comunque rifiutati: è usabilità. L'autorizzazione è quella applicata da

@@ -21,9 +21,3 @@ export function formattaOra(istante) {
     minute: '2-digit'
   });
 }
-
-// Accorda "casella" al numero: il testo dei vincoli viene composto in più punti e
-// deve leggersi come una frase, non come un'etichetta.
-export function formattaCaselle(quante) {
-  return quante === 1 ? '1 casella' : `${quante} caselle`;
-}

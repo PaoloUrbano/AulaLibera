@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 
-import { formattaCaselle } from '../formato';
+import { formattaDurata } from '../formato';
 
-// Mappa della giornata: una casella per ogni slot, dall'orario di apertura a quello di
-// chiusura. Mostrare le caselle invece di elencare a parole gli orari occupati rende
-// immediatamente visibile che cosa è libero, e soprattutto rende visibili i vincoli:
-// quante caselle servono al minimo, quante se ne possono prendere al massimo, e dove la
-// continuità si interrompe perché qualcun altro ha già prenotato.
+// Mappa della giornata: una casella per ogni intervallo prenotabile, dall'apertura alla
+// chiusura. Ogni casella riporta l'ora in cui comincia e l'ora in cui finisce, perché è
+// la fine a interessare chi prenota: mostrare la sola ora di inizio costringeva a fare
+// mentalmente l'ultima somma, e chi voleva finire alle 11:00 doveva capire da sé di
+// dover scegliere il riquadro delle 10:30.
+//
+// Nei testi rivolti all'utente non compaiono né "slot" né "casella": si parla soltanto
+// di orari e di durate, che sono i termini in cui il problema si presenta a chi prenota.
 
-// Una casella è cliccabile solo se non è occupata e non appartiene al passato.
 function eDisponibile(casella) {
   return !casella.occupato && !casella.passato;
 }
 
-// Verifica che l'intervallo [inizio, fine] sia interamente libero: la prenotazione deve
-// essere continua, non può scavalcare uno slot occupato.
+// L'intervallo dev'essere continuo: una prenotazione non può scavalcare un orario già
+// occupato da qualcun altro.
 function intervalloLibero(caselle, inizio, fine) {
   for (let indice = inizio; indice <= fine; indice += 1) {
     if (!eDisponibile(caselle[indice])) {
@@ -24,21 +26,20 @@ function intervalloLibero(caselle, inizio, fine) {
   return true;
 }
 
-// Indici su cui la selezione può terminare, dato un inizio: rispettano la continuità e
-// le durate minima e massima della risorsa.
+// Su quali orari la prenotazione può terminare, dato l'inizio scelto.
 function fineAmmessa(caselle, inizio, indice, slotMinimi, slotMassimi) {
   if (indice < inizio) {
     return false;
   }
-  const quante = indice - inizio + 1;
-  if (quante < slotMinimi || quante > slotMassimi) {
+  const quanti = indice - inizio + 1;
+  if (quanti < slotMinimi || quanti > slotMassimi) {
     return false;
   }
   return intervalloLibero(caselle, inizio, indice);
 }
 
-// Un inizio è proponibile solo se da lì partono almeno slotMinimi caselle libere
-// consecutive: proporre un inizio senza sbocco porterebbe a una richiesta respinta.
+// Un orario è proponibile come inizio solo se da lì c'è almeno la durata minima libera
+// di seguito: proporne uno senza sbocco porterebbe a una richiesta respinta.
 function inizioAmmesso(caselle, indice, slotMinimi) {
   const ultimo = indice + slotMinimi - 1;
   if (ultimo >= caselle.length) {
@@ -52,6 +53,7 @@ export default function MappaSlot({
   selezione,
   slotMinimi,
   slotMassimi,
+  durataMinimaMinuti,
   onSelezione,
   onAvviso
 }) {
@@ -61,8 +63,15 @@ export default function MappaSlot({
 
   function avviaSelezione(indice) {
     if (!inizioAmmesso(caselle, indice, slotMinimi)) {
+      // I due motivi per cui un orario non può fare da inizio sono diversi e vanno
+      // detti in modo diverso: o la giornata finisce prima, o qualcuno ha già prenotato.
+      const oltreLaChiusura = indice + slotMinimi - 1 >= caselle.length;
+      const durataMinima = formattaDurata(durataMinimaMinuti);
+
       onAvviso(
-        `Da qui non partono ${formattaCaselle(slotMinimi)} libere consecutive: scegli un altro inizio.`
+        oltreLaChiusura
+          ? `Dalle ${caselle[indice].oraInizio} alla chiusura non c'è tempo per una prenotazione di almeno ${durataMinima}: scegli un orario più presto.`
+          : `Dalle ${caselle[indice].oraInizio} non c'è spazio per una prenotazione di almeno ${durataMinima}: poco dopo la risorsa risulta già prenotata.`
       );
       return;
     }
@@ -80,7 +89,8 @@ export default function MappaSlot({
       return;
     }
 
-    // Un clic sull'inizio annulla la selezione: è il modo più prevedibile per ricominciare.
+    // Un clic sul primo orario annulla la scelta: è il modo più prevedibile per
+    // ricominciare da capo.
     if (indice === selezione.inizio) {
       onAvviso('');
       onSelezione({ inizio: null, fine: null });
@@ -93,12 +103,12 @@ export default function MappaSlot({
       return;
     }
 
-    // Il clic non può estendere la selezione corrente: viene inteso come un nuovo inizio.
+    // Il clic non può spostare la fine: viene inteso come un nuovo orario di inizio.
     avviaSelezione(indice);
   }
 
-  // Estremo finale evidenziato mentre il puntatore si muove: mostra in anticipo che cosa
-  // si otterrebbe con il clic, senza doverlo eseguire.
+  // Estremo finale evidenziato al passaggio del puntatore: mostra in anticipo dove
+  // arriverebbe la prenotazione, senza doverlo scoprire cliccando.
   const fineAnteprima =
     haInizio &&
     anteprima !== null &&
@@ -116,23 +126,24 @@ export default function MappaSlot({
       return 'casella casella-passata';
     }
 
-    const dentroSelezione =
-      haInizio && indice >= selezione.inizio && indice < selezione.fine;
-    if (dentroSelezione) {
+    if (haInizio && indice >= selezione.inizio && indice < selezione.fine) {
       return 'casella casella-selezionata';
     }
 
-    const dentroAnteprima =
+    if (
       fineAnteprima !== null &&
       indice >= selezione.inizio &&
-      indice < fineAnteprima;
-    if (dentroAnteprima) {
+      indice < fineAnteprima
+    ) {
       return 'casella casella-anteprima';
     }
 
-    // Con un inizio già scelto, le caselle che non possono chiudere la selezione
-    // vengono attenuate: il vincolo di durata si vede, non va ricordato.
-    if (haInizio && !fineAmmessa(caselle, selezione.inizio, indice, slotMinimi, slotMassimi)) {
+    // Con un inizio già scelto, gli orari su cui la prenotazione non può terminare
+    // vengono attenuati: il limite di durata si vede invece di doverlo ricordare.
+    if (
+      haInizio &&
+      !fineAmmessa(caselle, selezione.inizio, indice, slotMinimi, slotMassimi)
+    ) {
       return 'casella casella-inattiva';
     }
 
@@ -141,13 +152,15 @@ export default function MappaSlot({
 
   function descrizioneDi(indice) {
     const casella = caselle[indice];
+    const fascia = `dalle ${casella.oraInizio} alle ${casella.oraFine}`;
+
     if (casella.occupato) {
-      return `${casella.etichetta}: già prenotata`;
+      return `${fascia}: già prenotato`;
     }
     if (casella.passato) {
-      return `${casella.etichetta}: orario trascorso`;
+      return `${fascia}: orario passato`;
     }
-    return `${casella.etichetta}: libera`;
+    return `${fascia}: libero`;
   }
 
   return (
@@ -155,7 +168,7 @@ export default function MappaSlot({
       <div className="mappa-slot" onMouseLeave={() => impostaAnteprima(null)}>
         {caselle.map((casella, indice) => (
           <button
-            key={casella.etichetta}
+            key={casella.oraInizio}
             type="button"
             className={classeDi(indice)}
             title={descrizioneDi(indice)}
@@ -165,26 +178,27 @@ export default function MappaSlot({
             onFocus={() => impostaAnteprima(indice)}
             onClick={() => gestisciClic(indice)}
           >
-            {casella.etichetta}
+            <span className="ora-inizio">{casella.oraInizio}</span>
+            <span className="ora-fine">{casella.oraFine}</span>
           </button>
         ))}
       </div>
 
       <ul className="legenda">
         <li>
-          <span className="campione casella-libera" /> libera
+          <span className="campione casella-libera" /> libero
         </li>
         <li>
-          <span className="campione casella-selezionata" /> selezionata
+          <span className="campione casella-selezionata" /> il tuo orario
         </li>
         <li>
-          <span className="campione casella-occupata" /> già prenotata
+          <span className="campione casella-occupata" /> già prenotato
         </li>
         <li>
-          <span className="campione casella-passata" /> orario trascorso
+          <span className="campione casella-passata" /> orario passato
         </li>
         <li>
-          <span className="campione casella-inattiva" /> non compatibile con le durate
+          <span className="campione casella-inattiva" /> fuori dalla durata consentita
         </li>
       </ul>
     </div>

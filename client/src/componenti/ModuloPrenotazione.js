@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import Avviso from './Avviso';
 import MappaSlot from './MappaSlot';
-import { formattaCaselle, formattaDurata, formattaOra } from '../formato';
+import { formattaDurata, formattaOra } from '../formato';
 import { prenotazioni, risorse as apiRisorse } from '../servizi/api';
 
 const MILLISECONDI_IN_UN_MINUTO = 60 * 1000;
@@ -14,9 +14,10 @@ function componiIstante(giorno, orario) {
   return new Date(anno, mese - 1, numeroGiorno, ore, minuti, 0, 0);
 }
 
-// Costruisce la giornata come sequenza di caselle, una per slot, dall'apertura alla
-// chiusura. L'ultima casella è quella che termina esattamente alla chiusura: uno slot
-// che sforerebbe l'orario non viene proposto affatto.
+// Costruisce la giornata come sequenza di intervalli prenotabili, dall'apertura alla
+// chiusura. Ogni intervallo conserva l'ora in cui comincia e quella in cui finisce:
+// sono le due informazioni che l'utente legge sulla mappa. L'ultimo intervallo è quello
+// che termina esattamente alla chiusura, uno che la sforerebbe non viene proposto.
 function costruisciCaselle(configurazione, giorno, slotOccupati) {
   const apertura = componiIstante(giorno, configurazione.orarioApertura);
   const chiusura = componiIstante(giorno, configurazione.orarioChiusura);
@@ -28,10 +29,15 @@ function costruisciCaselle(configurazione, giorno, slotOccupati) {
   const adesso = Date.now();
 
   const caselle = [];
-  for (let istante = apertura.getTime(); istante + passo <= chiusura.getTime(); istante += passo) {
+  for (
+    let istante = apertura.getTime();
+    istante + passo <= chiusura.getTime();
+    istante += passo
+  ) {
     caselle.push({
       inizio: new Date(istante),
-      etichetta: formattaOra(istante),
+      oraInizio: formattaOra(istante),
+      oraFine: formattaOra(istante + passo),
       occupato: occupati.has(istante),
       passato: istante < adesso
     });
@@ -53,9 +59,8 @@ export default function ModuloPrenotazione({
 
   const passoMinuti = configurazione.durataSlotMinuti;
 
-  // I vincoli della risorsa, espressi nell'unità con cui l'utente sta lavorando.
-  // È il punto della schermata che scioglie l'equivoco fra la granularità dello slot e
-  // la durata minima: la casella è l'unità di misura, non la durata ammessa.
+  // Le durate ammesse dalla risorsa, convertite nel numero di intervalli che occupano.
+  // È una grandezza interna al calcolo: all'utente vengono mostrate solo come durate.
   const slotMinimi = Math.ceil(risorsa.durataMinimaMinuti / passoMinuti);
   const slotMassimi = Math.floor(risorsa.durataMassimaMinuti / passoMinuti);
 
@@ -78,8 +83,10 @@ export default function ModuloPrenotazione({
     };
   }, [risorsa._id, giorno, successo]);
 
-  const quanteSelezionate = selezione.inizio === null ? 0 : selezione.fine - selezione.inizio;
-  const istanteInizio = selezione.inizio === null ? null : caselle[selezione.inizio].inizio;
+  const durataScelta =
+    selezione.inizio === null ? 0 : (selezione.fine - selezione.inizio) * passoMinuti;
+  const istanteInizio =
+    selezione.inizio === null ? null : caselle[selezione.inizio].inizio;
   const istanteFine =
     selezione.inizio === null
       ? null
@@ -94,7 +101,7 @@ export default function ModuloPrenotazione({
     impostaSuccesso('');
 
     if (selezione.inizio === null) {
-      impostaErrore('Scegli la fascia oraria sulla mappa.');
+      impostaErrore("Scegli prima l'orario sulla mappa della giornata.");
       return;
     }
 
@@ -107,7 +114,7 @@ export default function ModuloPrenotazione({
       });
 
       impostaSuccesso(
-        `Prenotazione registrata: ${formattaOra(istanteInizio)} - ${formattaOra(istanteFine)}`
+        `Prenotato dalle ${formattaOra(istanteInizio)} alle ${formattaOra(istanteFine)}`
       );
       impostaSelezione({ inizio: null, fine: null });
       impostaMotivazione('');
@@ -130,20 +137,20 @@ export default function ModuloPrenotazione({
     }
   }
 
-  // La durata dello slot e le durate della risorsa sono impostate dall'amministratore in
-  // due schermate diverse e possono risultare incompatibili: con slot da 45 minuti una
-  // risorsa che ammette al massimo 60 minuti non avrebbe alcuna durata valida. Meglio
-  // dirlo qui che lasciare l'utente davanti a una mappa in cui nulla è selezionabile.
+  // La durata degli intervalli e le durate della risorsa sono impostate dall'amministratore
+  // in due schermate diverse e possono risultare incompatibili: con intervalli da 45
+  // minuti una risorsa che ammette al massimo un'ora non avrebbe alcuna durata valida.
+  // Meglio dirlo che lasciare l'utente davanti a una mappa in cui nulla si può scegliere.
   if (slotMassimi < slotMinimi) {
     return (
       <div className="riquadro">
         <h2>Prenota {risorsa.nome}</h2>
         <p className="regola">
-          Questa risorsa non è prenotabile con la granularità attuale: le caselle valgono{' '}
-          {passoMinuti} minuti, mentre la durata ammessa va da{' '}
+          Questa risorsa al momento non è prenotabile: la durata ammessa va da{' '}
           {formattaDurata(risorsa.durataMinimaMinuti)} a{' '}
-          {formattaDurata(risorsa.durataMassimaMinuti)}. Occorre che l'amministratore
-          allinei le durate alla durata dello slot.
+          {formattaDurata(risorsa.durataMassimaMinuti)}, ma gli orari sono divisi in
+          intervalli da {passoMinuti} minuti e nessuna durata valida ci rientra. Occorre
+          segnalarlo all'amministratore.
         </p>
       </div>
     );
@@ -154,16 +161,11 @@ export default function ModuloPrenotazione({
       <h2>Prenota {risorsa.nome}</h2>
 
       <p className="regola">
-        Ogni casella vale <strong>{passoMinuti} minuti</strong>. Per questa risorsa la
-        prenotazione deve coprire almeno{' '}
-        <strong>
-          {formattaCaselle(slotMinimi)} ({formattaDurata(risorsa.durataMinimaMinuti)})
-        </strong>{' '}
-        e al massimo{' '}
-        <strong>
-          {formattaCaselle(slotMassimi)} ({formattaDurata(risorsa.durataMassimaMinuti)})
-        </strong>
-        .
+        Puoi prenotare da un minimo di{' '}
+        <strong>{formattaDurata(risorsa.durataMinimaMinuti)}</strong> a un massimo di{' '}
+        <strong>{formattaDurata(risorsa.durataMassimaMinuti)}</strong>. Ogni riquadro è
+        una fascia di {passoMinuti} minuti e riporta l'ora in cui comincia e quella in cui
+        finisce.
       </p>
 
       <MappaSlot
@@ -171,6 +173,7 @@ export default function ModuloPrenotazione({
         selezione={selezione}
         slotMinimi={slotMinimi}
         slotMassimi={slotMassimi}
+        durataMinimaMinuti={risorsa.durataMinimaMinuti}
         onSelezione={impostaSelezione}
         onAvviso={impostaErrore}
       />
@@ -178,13 +181,17 @@ export default function ModuloPrenotazione({
       <p className="riepilogo">
         {selezione.inizio === null ? (
           <>
-            Nessuna fascia scelta. Fai clic su una casella libera: ne vengono selezionate{' '}
-            {formattaCaselle(slotMinimi)}, poi un secondo clic estende la selezione.
+            Fai clic sull'ora di inizio: la prenotazione parte subito con la durata minima
+            di {formattaDurata(risorsa.durataMinimaMinuti)}. Un secondo clic su un orario
+            successivo la allunga fino a lì.
           </>
         ) : (
           <>
-            Selezione: <strong>{formattaOra(istanteInizio)} - {formattaOra(istanteFine)}</strong>{' '}
-            · {formattaCaselle(quanteSelezionate)} · {formattaDurata(quanteSelezionate * passoMinuti)}
+            Prenoti{' '}
+            <strong>
+              dalle {formattaOra(istanteInizio)} alle {formattaOra(istanteFine)}
+            </strong>{' '}
+            — {formattaDurata(durataScelta)}
           </>
         )}
       </p>
