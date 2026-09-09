@@ -322,7 +322,8 @@ aula-libera/
 └── client/
     └── src/
         ├── App.js
-        ├── componenti/
+        ├── formato.js           formattazione di durate e orari
+        ├── componenti/          fra cui MappaSlot, la griglia della giornata
         ├── pagine/
         ├── contesti/            contesto di autenticazione
         └── servizi/             chiamate HTTP verso il backend
@@ -343,6 +344,15 @@ Una sola applicazione React per tutti i ruoli, non applicazioni separate. Studen
 docente condividono la **stessa pagina di prenotazione**: a cambiare è l'elenco delle
 risorse, che il backend restituisce già filtrato. L'amministratore raggiunge una sezione
 di gestione dedicata, il cui collegamento compare solo a lui.
+
+**La scelta della fascia oraria avviene su una mappa**, non su due menù a tendina: la
+giornata è disegnata come una griglia di caselle da `durataSlotMinuti` ciascuna, e lo
+stato di ognuna (libera, già prenotata, trascorsa, incompatibile con le durate della
+risorsa) si legge a colpo d'occhio. Il primo clic seleziona subito il numero minimo di
+caselle ammesso dalla risorsa, un secondo clic estende la selezione, e le caselle che non
+possono chiudere una prenotazione valida vengono attenuate. Così la granularità dello
+slot e la durata minima restano due grandezze distinte e visibili, mentre esprimerle solo
+a parole le faceva confondere.
 
 **Nascondere un pulsante non è autorizzazione.** Il frontend evita di mostrare comandi che
 verrebbero comunque rifiutati: è usabilità. L'autorizzazione è quella applicata da

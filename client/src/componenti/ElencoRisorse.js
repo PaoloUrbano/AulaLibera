@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { formattaDurata } from '../formato';
+
 // Presenta le risorse restituite dal backend. L'elenco è già filtrato dal ruolo: qui
 // non si decide che cosa mostrare, si mostra ciò che il server ha ritenuto pertinente.
 export default function ElencoRisorse({ risorse, selezionata, onSeleziona }) {
@@ -33,8 +35,8 @@ export default function ElencoRisorse({ risorse, selezionata, onSeleziona }) {
             </span>
 
             <span className="dettagli">
-              Durata ammessa da {risorsa.durataMinimaMinuti} a{' '}
-              {risorsa.durataMassimaMinuti} minuti
+              Prenotabile da {formattaDurata(risorsa.durataMinimaMinuti)} a{' '}
+              {formattaDurata(risorsa.durataMassimaMinuti)}
             </span>
 
             {risorsa.tipoRisorsa === 'Laboratorio' &&

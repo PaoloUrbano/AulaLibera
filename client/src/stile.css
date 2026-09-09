@@ -237,3 +237,124 @@ button:hover {
   color: var(--colore-tenue);
   font-style: italic;
 }
+
+/* ---------- Mappa degli slot ---------- */
+
+/* Le caselle rappresentano la giornata in scala: la loro sequenza è l'informazione,
+   quindi hanno tutte la stessa dimensione e restano allineate su una griglia. */
+.mappa-slot {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+  gap: 5px;
+  margin: 0.75rem 0;
+}
+
+.casella {
+  margin: 0;
+  padding: 0.5rem 0.2rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  border-radius: 4px;
+  border: 1px solid var(--colore-bordo);
+  background: #fff;
+  color: var(--colore-testo);
+  transition: none;
+}
+
+.casella-libera {
+  background: #fff;
+  border-color: var(--colore-bordo);
+}
+
+.casella-libera:hover {
+  border-color: var(--colore-accento);
+}
+
+.casella-selezionata {
+  background: var(--colore-accento);
+  border-color: var(--colore-accento);
+  color: #fff;
+  font-weight: 600;
+}
+
+.casella-anteprima {
+  background: #dbe7f2;
+  border-color: var(--colore-accento);
+  color: var(--colore-accento);
+}
+
+/* La campitura a righe distingue l'occupato dal disabilitato anche senza percepire il
+   colore: la sola tinta non basterebbe a chi ha difficoltà di distinzione cromatica. */
+.casella-occupata {
+  background: repeating-linear-gradient(
+    45deg,
+    #e6e9ec,
+    #e6e9ec 4px,
+    #d2d7dc 4px,
+    #d2d7dc 8px
+  );
+  border-color: #c3cad1;
+  color: #6c7883;
+  cursor: not-allowed;
+}
+
+.casella-passata {
+  background: #f2f4f6;
+  border-color: var(--colore-bordo);
+  color: #a6afb8;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.casella-inattiva {
+  background: #fff;
+  border-color: #e8ecef;
+  color: #b7bfc7;
+}
+
+.legenda {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--colore-tenue);
+}
+
+.legenda li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.campione {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--colore-bordo);
+}
+
+/* Enunciato dei vincoli della risorsa: sta sopra la mappa perché va letto prima di
+   scegliere, non dopo aver ricevuto un errore. */
+.regola {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: #eef3f8;
+  border-left: 3px solid var(--colore-accento);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.88rem;
+}
+
+.riepilogo {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+button:disabled {
+  background: #aab5c0;
+  border-color: #aab5c0;
+  cursor: not-allowed;
+}

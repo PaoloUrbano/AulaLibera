@@ -1,39 +1,42 @@
 import React, { useEffect, useState } from 'react';
 
 import Avviso from './Avviso';
+import MappaSlot from './MappaSlot';
+import { formattaCaselle, formattaDurata, formattaOra } from '../formato';
 import { prenotazioni, risorse as apiRisorse } from '../servizi/api';
 
-// Genera gli orari selezionabili con la granularità stabilita dalla configurazione:
-// proporre orari non allineati agli slot significherebbe far compilare all'utente una
-// richiesta che il server rifiuterebbe.
-function orariSelezionabili({ orarioApertura, orarioChiusura, durataSlotMinuti }) {
-  const [oraApertura, minutiApertura] = orarioApertura.split(':').map(Number);
-  const [oraChiusura, minutiChiusura] = orarioChiusura.split(':').map(Number);
+const MILLISECONDI_IN_UN_MINUTO = 60 * 1000;
 
-  const inizio = oraApertura * 60 + minutiApertura;
-  const fine = oraChiusura * 60 + minutiChiusura;
-
-  const orari = [];
-  for (let minuti = inizio; minuti <= fine; minuti += durataSlotMinuti) {
-    const ore = String(Math.floor(minuti / 60)).padStart(2, '0');
-    const resto = String(minuti % 60).padStart(2, '0');
-    orari.push(`${ore}:${resto}`);
-  }
-  return orari;
-}
-
-// Compone l'istante locale corrispondente a giorno e orario scelti dall'utente.
+// Compone l'istante locale corrispondente a giorno e orario.
 function componiIstante(giorno, orario) {
   const [anno, mese, numeroGiorno] = giorno.split('-').map(Number);
   const [ore, minuti] = orario.split(':').map(Number);
   return new Date(anno, mese - 1, numeroGiorno, ore, minuti, 0, 0);
 }
 
-function soloOrario(istante) {
-  return new Date(istante).toLocaleTimeString('it-IT', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+// Costruisce la giornata come sequenza di caselle, una per slot, dall'apertura alla
+// chiusura. L'ultima casella è quella che termina esattamente alla chiusura: uno slot
+// che sforerebbe l'orario non viene proposto affatto.
+function costruisciCaselle(configurazione, giorno, slotOccupati) {
+  const apertura = componiIstante(giorno, configurazione.orarioApertura);
+  const chiusura = componiIstante(giorno, configurazione.orarioChiusura);
+  const passo = configurazione.durataSlotMinuti * MILLISECONDI_IN_UN_MINUTO;
+
+  const occupati = new Set(
+    slotOccupati.map((istante) => new Date(istante).getTime())
+  );
+  const adesso = Date.now();
+
+  const caselle = [];
+  for (let istante = apertura.getTime(); istante + passo <= chiusura.getTime(); istante += passo) {
+    caselle.push({
+      inizio: new Date(istante),
+      etichetta: formattaOra(istante),
+      occupato: occupati.has(istante),
+      passato: istante < adesso
+    });
+  }
+  return caselle;
 }
 
 export default function ModuloPrenotazione({
@@ -42,18 +45,22 @@ export default function ModuloPrenotazione({
   giorno,
   onPrenotata
 }) {
-  const orari = orariSelezionabili(configurazione);
-
-  const [oraInizio, impostaOraInizio] = useState(orari[0]);
-  const [oraFine, impostaOraFine] = useState(orari[Math.min(2, orari.length - 1)]);
+  const [slotOccupati, impostaSlotOccupati] = useState([]);
+  const [selezione, impostaSelezione] = useState({ inizio: null, fine: null });
   const [motivazione, impostaMotivazione] = useState('');
-  const [occupati, impostaOccupati] = useState([]);
   const [errore, impostaErrore] = useState('');
   const [successo, impostaSuccesso] = useState('');
 
-  // Gli slot già occupati sono mostrati prima dell'invio: è un aiuto alla scelta, non
-  // una garanzia, perché un altro utente può prenotarli nel frattempo. La decisione
-  // definitiva resta del server.
+  const passoMinuti = configurazione.durataSlotMinuti;
+
+  // I vincoli della risorsa, espressi nell'unità con cui l'utente sta lavorando.
+  // È il punto della schermata che scioglie l'equivoco fra la granularità dello slot e
+  // la durata minima: la casella è l'unità di misura, non la durata ammessa.
+  const slotMinimi = Math.ceil(risorsa.durataMinimaMinuti / passoMinuti);
+  const slotMassimi = Math.floor(risorsa.durataMassimaMinuti / passoMinuti);
+
+  const caselle = costruisciCaselle(configurazione, giorno, slotOccupati);
+
   useEffect(() => {
     let annullato = false;
 
@@ -61,85 +68,128 @@ export default function ModuloPrenotazione({
       .disponibilita(risorsa._id, giorno)
       .then((risposta) => {
         if (!annullato) {
-          impostaOccupati(risposta.slot);
+          impostaSlotOccupati(risposta.slot);
         }
       })
-      .catch(() => impostaOccupati([]));
+      .catch(() => impostaSlotOccupati([]));
 
     return () => {
       annullato = true;
     };
   }, [risorsa._id, giorno, successo]);
 
+  const quanteSelezionate = selezione.inizio === null ? 0 : selezione.fine - selezione.inizio;
+  const istanteInizio = selezione.inizio === null ? null : caselle[selezione.inizio].inizio;
+  const istanteFine =
+    selezione.inizio === null
+      ? null
+      : new Date(
+          caselle[selezione.fine - 1].inizio.getTime() +
+            passoMinuti * MILLISECONDI_IN_UN_MINUTO
+        );
+
   async function invia(evento) {
     evento.preventDefault();
     impostaErrore('');
     impostaSuccesso('');
 
+    if (selezione.inizio === null) {
+      impostaErrore('Scegli la fascia oraria sulla mappa.');
+      return;
+    }
+
     try {
       await prenotazioni.crea({
         idRisorsa: risorsa._id,
-        dataOraInizio: componiIstante(giorno, oraInizio).toISOString(),
-        dataOraFine: componiIstante(giorno, oraFine).toISOString(),
+        dataOraInizio: istanteInizio.toISOString(),
+        dataOraFine: istanteFine.toISOString(),
         motivazione
       });
 
-      impostaSuccesso('Prenotazione registrata');
+      impostaSuccesso(
+        `Prenotazione registrata: ${formattaOra(istanteInizio)} - ${formattaOra(istanteFine)}`
+      );
+      impostaSelezione({ inizio: null, fine: null });
       impostaMotivazione('');
       if (onPrenotata) {
         onPrenotata();
       }
     } catch (problema) {
+      // Il conflitto è la sola risposta che rende obsoleta la mappa mostrata: qualcuno
+      // ha prenotato mentre l'utente stava scegliendo, e va ricaricata.
+      if (problema.codice === 409) {
+        impostaSelezione({ inizio: null, fine: null });
+        const aggiornata = await apiRisorse
+          .disponibilita(risorsa._id, giorno)
+          .catch(() => null);
+        if (aggiornata) {
+          impostaSlotOccupati(aggiornata.slot);
+        }
+      }
       impostaErrore(problema.message);
     }
+  }
+
+  // La durata dello slot e le durate della risorsa sono impostate dall'amministratore in
+  // due schermate diverse e possono risultare incompatibili: con slot da 45 minuti una
+  // risorsa che ammette al massimo 60 minuti non avrebbe alcuna durata valida. Meglio
+  // dirlo qui che lasciare l'utente davanti a una mappa in cui nulla è selezionabile.
+  if (slotMassimi < slotMinimi) {
+    return (
+      <div className="riquadro">
+        <h2>Prenota {risorsa.nome}</h2>
+        <p className="regola">
+          Questa risorsa non è prenotabile con la granularità attuale: le caselle valgono{' '}
+          {passoMinuti} minuti, mentre la durata ammessa va da{' '}
+          {formattaDurata(risorsa.durataMinimaMinuti)} a{' '}
+          {formattaDurata(risorsa.durataMassimaMinuti)}. Occorre che l'amministratore
+          allinei le durate alla durata dello slot.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="riquadro">
       <h2>Prenota {risorsa.nome}</h2>
 
-      <p className="dettagli">
-        Slot da {configurazione.durataSlotMinuti} minuti · apertura{' '}
-        {configurazione.orarioApertura} · chiusura {configurazione.orarioChiusura}
+      <p className="regola">
+        Ogni casella vale <strong>{passoMinuti} minuti</strong>. Per questa risorsa la
+        prenotazione deve coprire almeno{' '}
+        <strong>
+          {formattaCaselle(slotMinimi)} ({formattaDurata(risorsa.durataMinimaMinuti)})
+        </strong>{' '}
+        e al massimo{' '}
+        <strong>
+          {formattaCaselle(slotMassimi)} ({formattaDurata(risorsa.durataMassimaMinuti)})
+        </strong>
+        .
       </p>
 
-      <p className="dettagli">
-        {occupati.length === 0
-          ? 'Nessuno slot risulta occupato in questa giornata.'
-          : `Slot già occupati: ${occupati.map(soloOrario).join(', ')}`}
+      <MappaSlot
+        caselle={caselle}
+        selezione={selezione}
+        slotMinimi={slotMinimi}
+        slotMassimi={slotMassimi}
+        onSelezione={impostaSelezione}
+        onAvviso={impostaErrore}
+      />
+
+      <p className="riepilogo">
+        {selezione.inizio === null ? (
+          <>
+            Nessuna fascia scelta. Fai clic su una casella libera: ne vengono selezionate{' '}
+            {formattaCaselle(slotMinimi)}, poi un secondo clic estende la selezione.
+          </>
+        ) : (
+          <>
+            Selezione: <strong>{formattaOra(istanteInizio)} - {formattaOra(istanteFine)}</strong>{' '}
+            · {formattaCaselle(quanteSelezionate)} · {formattaDurata(quanteSelezionate * passoMinuti)}
+          </>
+        )}
       </p>
 
       <form onSubmit={invia}>
-        <div className="riga">
-          <label>
-            Dalle
-            <select
-              value={oraInizio}
-              onChange={(evento) => impostaOraInizio(evento.target.value)}
-            >
-              {orari.map((orario) => (
-                <option key={orario} value={orario}>
-                  {orario}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Alle
-            <select
-              value={oraFine}
-              onChange={(evento) => impostaOraFine(evento.target.value)}
-            >
-              {orari.map((orario) => (
-                <option key={orario} value={orario}>
-                  {orario}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
         <label>
           Motivazione
           <input
@@ -151,7 +201,9 @@ export default function ModuloPrenotazione({
 
         <Avviso errore={errore} successo={successo} />
 
-        <button type="submit">Conferma la prenotazione</button>
+        <button type="submit" disabled={selezione.inizio === null}>
+          Conferma la prenotazione
+        </button>
       </form>
     </div>
   );
