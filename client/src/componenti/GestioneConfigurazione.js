@@ -3,9 +3,6 @@ import React, { useEffect, useState } from 'react';
 import Avviso from './Avviso';
 import { configurazione as apiConfigurazione } from '../servizi/api';
 
-// I parametri globali valgono per tutte le risorse. Cambiare la durata dello slot
-// modifica la granularità con cui il sistema discretizza il tempo, quindi anche il modo
-// in cui vengono acquisite le occupazioni delle prenotazioni successive.
 export default function GestioneConfigurazione() {
   const [campi, impostaCampi] = useState(null);
   const [errore, impostaErrore] = useState('');

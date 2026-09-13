@@ -2,7 +2,6 @@ const servizioAutenticazione = require('../servizi/servizioAutenticazione');
 const { ErroreAutenticazione } = require('../servizi/errori');
 const { catturaErrori } = require('./gestoreErrori');
 
-// Estrae il token dall'intestazione Authorization nella forma "Bearer <token>".
 function estraiToken(richiesta) {
   const intestazione = richiesta.headers.authorization;
   if (!intestazione || !intestazione.startsWith('Bearer ')) {
@@ -11,10 +10,8 @@ function estraiToken(richiesta) {
   return intestazione.slice('Bearer '.length).trim();
 }
 
-// Autentica la richiesta e rende disponibile l'utente ai controllori come req.utente.
-// L'utente viene ricaricato dal database a ogni richiesta e non ricostruito dal token:
-// ruolo e abilitazioni possono essere cambiati dopo l'emissione del token, e continuare
-// a fidarsi del suo contenuto significherebbe applicare permessi obsoleti.
+// L'utente viene riletto dal database a ogni richiesta invece di fidarsi del
+// token: ruolo e abilitazioni possono essere cambiati dopo l'emissione.
 const verificaToken = catturaErrori(async (richiesta, risposta, successivo) => {
   const token = estraiToken(richiesta);
 

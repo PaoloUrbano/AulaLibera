@@ -13,8 +13,7 @@ import PaginaPrenotazione from './pagine/PaginaPrenotazione';
 import PaginaMiePrenotazioni from './pagine/PaginaMiePrenotazioni';
 import PaginaAmministrazione from './pagine/PaginaAmministrazione';
 
-// Una sola applicazione per tutti i ruoli: la pagina iniziale è quella di prenotazione,
-// tranne che per l'amministratore, che non prenota e viene condotto alla gestione.
+// l'amministratore non prenota: la sua pagina iniziale è la gestione
 function PaginaIniziale() {
   const { eAmministratore } = usaAutenticazione();
   return eAmministratore ? (

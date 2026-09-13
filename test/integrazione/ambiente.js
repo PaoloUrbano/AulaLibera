@@ -6,17 +6,12 @@ const { Aula, Laboratorio } = require('../../src/modelli/RisorsaPrenotabile');
 const servizioAutenticazione = require('../../src/servizi/servizioAutenticazione');
 const { creaApplicazione } = require('../../server');
 
-// I test di integrazione girano contro una vera istanza di MongoDB avviata in memoria:
-// senza di essa non sarebbero verificabili né gli indici né il comportamento del driver,
-// che è esattamente ciò che il requisito sulla concorrenza mette alla prova.
 let istanzaMongo;
 
 async function avviaAmbiente() {
   istanzaMongo = await MongoMemoryServer.create();
   await mongoose.connect(istanzaMongo.getUri());
 
-  // Gli indici vanno creati esplicitamente prima dei test: l'indice univoco su
-  // Occupazione è il vincolo che i test di concorrenza devono poter osservare.
   await Promise.all(
     Object.values(mongoose.models).map((modello) => modello.init())
   );
@@ -27,8 +22,7 @@ async function chiudiAmbiente() {
   await istanzaMongo.stop();
 }
 
-// Svuota i documenti conservando gli indici: eliminare le collezioni li distruggerebbe
-// e il test successivo verrebbe eseguito senza il vincolo di unicità.
+// deleteMany e non drop: il drop toglierebbe anche l'indice univoco
 async function svuotaDatabase() {
   const collezioni = Object.values(mongoose.connection.collections);
   await Promise.all(collezioni.map((collezione) => collezione.deleteMany({})));
@@ -44,7 +38,6 @@ async function creaUtente({ ruolo, email, password = 'password-di-prova' }) {
   });
 }
 
-// Restituisce l'intestazione di autorizzazione pronta per essere passata a Supertest.
 function autorizzazione(utente) {
   return `Bearer ${servizioAutenticazione.generaToken(utente)}`;
 }
@@ -74,8 +67,7 @@ function creaLaboratorio(modifiche = {}) {
   });
 }
 
-// Istante di domani a un orario dato: i test non possono usare date fisse, perché una
-// prenotazione nel passato viene respinta dalle regole di dominio.
+// niente date fisse: una prenotazione nel passato viene rifiutata
 function domaniAlle(ore, minuti = 0) {
   const istante = new Date();
   istante.setDate(istante.getDate() + 1);
@@ -83,7 +75,6 @@ function domaniAlle(ore, minuti = 0) {
   return istante;
 }
 
-// Il giorno di domani nella forma AAAA-MM-GG attesa dai parametri delle rotte.
 function giornoDomani() {
   const istante = domaniAlle(0);
   const mese = String(istante.getMonth() + 1).padStart(2, '0');

@@ -7,8 +7,6 @@ const ambiente = require('./ambiente');
 
 const richiesta = supertest(ambiente.creaApplicazione());
 
-// Numero di richieste lanciate contemporaneamente sulla stessa risorsa e sullo stesso
-// intervallo. Deve essere ampiamente maggiore di uno perché la corsa sia significativa.
 const RICHIESTE_SIMULTANEE = 10;
 
 let aulaStudio;
@@ -22,8 +20,6 @@ beforeEach(async () => {
 
   aulaStudio = await ambiente.creaAula({ codice: 'A01', tipoAula: 'studio' });
 
-  // Utenti distinti: la corsa deve avvenire fra persone diverse, come nello scenario
-  // reale di due studenti che chiedono la stessa aula nello stesso momento.
   utenti = await Promise.all(
     Array.from({ length: RICHIESTE_SIMULTANEE }, (nonUsato, indice) =>
       ambiente.creaUtente({
@@ -60,7 +56,7 @@ describe('Requisito non funzionale: mutua esclusione in presenza di richieste co
       (indice) => indice.key.risorsa === 1 && indice.key.slotInizio === 1
     );
 
-    // È questo vincolo, e non il codice applicativo, a garantire il requisito.
+    // è l'indice a garantire il requisito, non il codice
     expect(indiceDiEsclusione).toBeDefined();
     expect(indiceDiEsclusione.unique).toBe(true);
   });
@@ -77,8 +73,6 @@ describe('Requisito non funzionale: mutua esclusione in presenza di richieste co
   test('dopo la corsa resta una sola prenotazione e i soli slot che le competono', async () => {
     await Promise.all(utenti.map((utente) => richiediPrenotazione(utente, 9, 11)));
 
-    // Le richieste perdenti compensano: nessuna prenotazione orfana, nessuno slot
-    // trattenuto da un tentativo fallito.
     expect(await Prenotazione.countDocuments()).toBe(1);
     expect(await Occupazione.countDocuments()).toBe(4);
   });
@@ -98,8 +92,7 @@ describe('Requisito non funzionale: mutua esclusione in presenza di richieste co
   });
 
   test('la mutua esclusione vale anche per intervalli diversi ma sovrapposti', async () => {
-    // Fasce sfalsate che condividono lo slot delle 10:00: solo la prima a scrivere
-    // quello slot può riuscire.
+    // tutte e tre passano per lo slot delle 10:00
     const risposte = await Promise.all([
       richiediPrenotazione(utenti[0], 9, 11),
       richiediPrenotazione(utenti[1], 10, 12),

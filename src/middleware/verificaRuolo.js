@@ -1,12 +1,8 @@
 const { ErroreAutorizzazione, ErroreAutenticazione } = require('../servizi/errori');
 
-// Fabbrica di middleware di autorizzazione: verificaRuolo('amministratore') restituisce
-// il middleware che lascia passare i soli amministratori.
-//
-// Questo controllo è il punto in cui l'autorizzazione viene effettivamente applicata.
-// Il frontend nasconde all'utente i comandi che non gli competono, ma nascondere un
-// pulsante non è autorizzazione: una richiesta HTTP costruita a mano raggiunge comunque
-// l'endpoint, ed è qui che viene respinta.
+// Qui avviene l'autorizzazione vera. Il frontend nasconde i comandi che non
+// competono al ruolo, ma nascondere un pulsante non è autorizzazione: una
+// richiesta costruita a mano arriva comunque all'endpoint ed è qui che viene respinta.
 function verificaRuolo(...ruoliAmmessi) {
   return (richiesta, risposta, successivo) => {
     if (!richiesta.utente) {

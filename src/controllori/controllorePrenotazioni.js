@@ -14,8 +14,7 @@ async function crea(richiesta, risposta) {
   risposta.status(201).json({ prenotazione });
 }
 
-// Le proprie prenotazioni: l'identificativo dell'utente viene dal token, mai dalla
-// richiesta, altrimenti sarebbe sufficiente cambiarlo per leggere quelle altrui.
+// l'id dell'utente viene dal token, mai dalla richiesta
 async function mie(richiesta, risposta) {
   const prenotazioni = await servizioPrenotazioni.elencaPrenotazioniUtente(
     richiesta.utente._id,

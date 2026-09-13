@@ -1,11 +1,8 @@
 const mongoose = require('mongoose');
 
-// Espressione di un orario nella forma HH:MM su 24 ore.
 const FORMATO_ORARIO = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-// Documento singleton: i parametri globali del sistema sono uno solo e devono restare
-// uno solo. Il campo "chiave" con valore fisso e indice univoco impedisce che una
-// seconda configurazione venga creata per errore.
+// singleton: la chiave fissa con indice univoco impedisce un secondo documento
 const schemaConfigurazione = new mongoose.Schema(
   {
     chiave: {
@@ -14,10 +11,7 @@ const schemaConfigurazione = new mongoose.Schema(
       enum: ['globale'],
       unique: true
     },
-
-    // Granularità della prenotazione: è anche l'ampiezza degli slot di Occupazione.
     durataSlotMinuti: { type: Number, default: 30, min: 1 },
-
     anticipoMassimoGiorni: { type: Number, default: 30, min: 1 },
     orarioApertura: { type: String, default: '08:00', match: FORMATO_ORARIO },
     orarioChiusura: { type: String, default: '20:00', match: FORMATO_ORARIO },

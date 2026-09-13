@@ -1,6 +1,3 @@
-// Il servizio è messo alla prova in isolamento: il modello Utente e il servizio di
-// configurazione sono sostituiti da doppioni, così il test verifica soltanto le regole
-// di registrazione e di accesso senza dipendere da un database.
 jest.mock('../../src/modelli/Utente', () => ({
   exists: jest.fn(),
   findOne: jest.fn(),

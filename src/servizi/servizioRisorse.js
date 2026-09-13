@@ -14,8 +14,8 @@ const {
   ErroreConflitto
 } = require('./errori');
 
-// Campi che l'amministratore può valorizzare: enumerarli evita che una richiesta possa
-// scrivere campi interni come tipoRisorsa, che determina la sottoclasse del documento.
+// campi scrivibili dall'amministratore; tipoRisorsa resta fuori perché
+// determina la sottoclasse del documento
 const CAMPI_COMUNI = [
   'codice',
   'nome',
@@ -34,14 +34,8 @@ const CAMPI_LABORATORIO = [
   'richiedeAbilitazione'
 ];
 
-// ---------------------------------------------------------------------------
-// REGOLE DI PRENOTABILITÀ PER RUOLO
-// ---------------------------------------------------------------------------
-
-// Restituisce il motivo per cui l'utente non può prenotare la risorsa, oppure null se
-// può. Una sola funzione decide la regola, usata sia per filtrare l'elenco mostrato
-// all'utente sia per autorizzare la creazione della prenotazione: l'elenco filtrato è
-// comodità d'uso, il controllo in fase di creazione è la vera applicazione della regola.
+// Regola sui ruoli. È usata sia per filtrare l'elenco mostrato all'utente sia per
+// autorizzare la creazione: il filtro è comodità, il controllo in creazione è il vincolo.
 function motivoNonPrenotabile(utente, risorsa) {
   if (utente.ruolo === 'amministratore') {
     return "L'amministratore gestisce le risorse ma non effettua prenotazioni";
@@ -83,10 +77,6 @@ function verificaPrenotabilita(utente, risorsa) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// CONSULTAZIONE
-// ---------------------------------------------------------------------------
-
 async function ottieniRisorsa(idRisorsa) {
   const risorsa = await RisorsaPrenotabile.findById(idRisorsa);
   if (!risorsa) {
@@ -95,8 +85,6 @@ async function ottieniRisorsa(idRisorsa) {
   return risorsa;
 }
 
-// Elenca le risorse applicando i filtri richiesti e, se è indicato un utente non
-// amministratore, nasconde quelle che il suo ruolo non gli consente di prenotare.
 async function elencaRisorse(filtri = {}, utente = null) {
   const {
     tipoRisorsa,
@@ -120,7 +108,7 @@ async function elencaRisorse(filtri = {}, utente = null) {
     interrogazione.dipartimento = dipartimento;
   }
 
-  // Solo l'amministratore vede le risorse disattivate: per gli altri non esistono.
+  // le disattivate le vede solo l'amministratore
   const eAmministratore = Boolean(utente) && utente.ruolo === 'amministratore';
   if (!includiDisattivate || !eAmministratore) {
     interrogazione.attiva = true;
@@ -132,8 +120,6 @@ async function elencaRisorse(filtri = {}, utente = null) {
     risorse = risorse.filter((risorsa) => puoPrenotare(utente, risorsa));
   }
 
-  // Filtro di disponibilità: se è indicata una fascia oraria, restano solo le risorse
-  // che non hanno alcuno slot già occupato in quella fascia.
   if (giorno && oraInizio && oraFine) {
     const occupate = await risorseOccupateNellaFascia(
       risorse.map((risorsa) => risorsa._id),
@@ -147,8 +133,6 @@ async function elencaRisorse(filtri = {}, utente = null) {
   return risorse;
 }
 
-// Restituisce l'insieme degli identificativi delle risorse che risultano occupate anche
-// per un solo slot della fascia indicata.
 async function risorseOccupateNellaFascia(idRisorse, giorno, oraInizio, oraFine) {
   const configurazione = await servizioConfigurazione.ottieniConfigurazione();
   const inizio = tempo.componiData(giorno, oraInizio);
@@ -170,8 +154,6 @@ async function risorseOccupateNellaFascia(idRisorse, giorno, oraInizio, oraFine)
   return new Set(occupazioni.map((occupazione) => String(occupazione.risorsa)));
 }
 
-// Slot già occupati di una risorsa in un giorno: consente al frontend di mostrare la
-// disponibilità prima che l'utente invii la richiesta di prenotazione.
 async function slotOccupati(idRisorsa, giorno) {
   const configurazione = await servizioConfigurazione.ottieniConfigurazione();
   const inizioGiornata = tempo.componiData(giorno, '00:00');
@@ -190,10 +172,6 @@ async function slotOccupati(idRisorsa, giorno) {
     slot: occupazioni.map((occupazione) => occupazione.slotInizio)
   };
 }
-
-// ---------------------------------------------------------------------------
-// GESTIONE (riservata all'amministratore)
-// ---------------------------------------------------------------------------
 
 function estraiCampi(origine, campiAmmessi) {
   const risultato = {};
@@ -249,19 +227,17 @@ async function aggiornaRisorsa(idRisorsa, modifiche) {
   }
 }
 
-// La disattivazione è distinta dall'eliminazione: rende la risorsa non prenotabile
-// lasciando integro lo storico delle prenotazioni che la riferiscono.
+// disattivare conserva lo storico, eliminare no
 async function impostaAttivazione(idRisorsa, attiva) {
   const risorsa = await ottieniRisorsa(idRisorsa);
   risorsa.attiva = attiva;
   return risorsa.save();
 }
 
-// L'eliminazione è consentita solo in assenza di occupazioni: cancellare una risorsa
-// prenotata lascerebbe prenotazioni che puntano a un documento inesistente.
 async function eliminaRisorsa(idRisorsa) {
   const risorsa = await ottieniRisorsa(idRisorsa);
 
+  // con occupazioni in giro resterebbero prenotazioni che puntano nel vuoto
   if (await Occupazione.exists({ risorsa: risorsa._id })) {
     throw new ErroreConflitto(
       'La risorsa ha prenotazioni attive: disattivarla anziché eliminarla'
@@ -272,13 +248,8 @@ async function eliminaRisorsa(idRisorsa) {
   return risorsa;
 }
 
-// ---------------------------------------------------------------------------
-// ABILITAZIONI AI LABORATORI
-// ---------------------------------------------------------------------------
-
-// L'abilitazione lega uno studente a un laboratorio: gestisce l'associazione modellata
-// in Utente.abilitazioniLaboratori ed è collocata fra le operazioni sulle risorse
-// perché è il laboratorio, con richiedeAbilitazione, a renderla necessaria.
+// L'abilitazione sta qui e non nel servizio di autenticazione perché è il
+// laboratorio, con richiedeAbilitazione, a renderla necessaria.
 async function impostaAbilitazione(idStudente, idLaboratorio, abilitato) {
   const studente = await Utente.findById(idStudente);
   if (!studente) {
@@ -315,8 +286,7 @@ async function elencaStudenti() {
     .populate('abilitazioniLaboratori', 'codice nome dipartimento');
 }
 
-// Traduce gli errori del driver e della validazione di Mongoose in errori di dominio:
-// i livelli superiori non devono conoscere i codici di errore di MongoDB.
+// i codici di errore di MongoDB non devono uscire dal livello dei servizi
 function traduciErroreDiScrittura(errore) {
   if (errore.code === 11000) {
     return new ErroreConflitto('Esiste già una risorsa con questo codice');

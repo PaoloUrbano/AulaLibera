@@ -7,11 +7,9 @@ const { catturaErrori } = require('../middleware/gestoreErrori');
 
 const rotte = express.Router();
 
-// Ogni rotta richiede un'identità: non esiste consultazione anonima del patrimonio aule.
 rotte.use(verificaToken);
 
-// Le rotte delle abilitazioni precedono quelle con parametro :id, altrimenti Express
-// interpreterebbe "abilitazioni" come identificativo di una risorsa.
+// prima delle rotte con :id, altrimenti "abilitazioni" verrebbe letto come un id
 rotte.get(
   '/abilitazioni/studenti',
   verificaRuolo('amministratore'),
@@ -27,7 +25,6 @@ rotte.get('/', catturaErrori(controlloreRisorse.elenca));
 rotte.get('/:id', catturaErrori(controlloreRisorse.ottieni));
 rotte.get('/:id/disponibilita', catturaErrori(controlloreRisorse.disponibilita));
 
-// Gestione del patrimonio: riservata all'amministratore.
 rotte.post(
   '/',
   verificaRuolo('amministratore'),

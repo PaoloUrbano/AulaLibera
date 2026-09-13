@@ -1,12 +1,6 @@
-// Funzioni pure sul tempo, usate dalle regole di dominio che riguardano gli orari.
-// Sono isolate qui perché servono a più servizi e perché, non dipendendo da modelli
-// né da Express, sono verificabili con test di unità diretti.
-//
-// Tutti i calcoli usano il fuso orario locale del processo. È una dipendenza reale e
-// va tenuta presente: gli orari di apertura e chiusura dell'ateneo sono orari di Bari,
-// non istanti UTC, quindi il server deve girare nel fuso dell'ateneo. La variabile di
-// ambiente TZ lo impone, il Dockerfile la valorizza e server.js verifica all'avvio che
-// il fuso attivo sia quello atteso.
+// Funzioni pure sul tempo, condivise dai servizi.
+// Tutto ragiona in ora locale del processo: apertura e chiusura sono orari di Bari,
+// quindi il server deve girare con TZ=Europe/Rome (vedi Dockerfile e server.js).
 
 const MINUTI_IN_UN_GIORNO = 24 * 60;
 const MILLISECONDI_IN_UN_MINUTO = 60 * 1000;
@@ -15,7 +9,6 @@ function minutiDaMezzanotte(data) {
   return data.getHours() * 60 + data.getMinutes();
 }
 
-// Converte un orario nella forma "HH:MM" nel numero di minuti trascorsi da mezzanotte.
 function orarioInMinuti(orario) {
   const [ore, minuti] = orario.split(':').map(Number);
   return ore * 60 + minuti;
@@ -33,8 +26,6 @@ function stessoGiorno(primaData, secondaData) {
   );
 }
 
-// Un istante è allineato allo slot se dista da mezzanotte un multiplo esatto della
-// durata dello slot e non porta secondi o millisecondi residui.
 function eAllineatoAlloSlot(data, durataSlotMinuti) {
   if (data.getSeconds() !== 0 || data.getMilliseconds() !== 0) {
     return false;
@@ -42,9 +33,7 @@ function eAllineatoAlloSlot(data, durataSlotMinuti) {
   return minutiDaMezzanotte(data) % durataSlotMinuti === 0;
 }
 
-// Elenca gli istanti di inizio degli slot coperti dall'intervallo [inizio, fine).
-// La fine è esclusa: una prenotazione 09:00-10:00 con slot da 30 minuti occupa gli
-// slot 09:00 e 09:30, non quello delle 10:00.
+// intervallo [inizio, fine): 09:00-10:00 con slot da 30' occupa 09:00 e 09:30
 function elencaSlot(dataOraInizio, dataOraFine, durataSlotMinuti) {
   const passo = durataSlotMinuti * MILLISECONDI_IN_UN_MINUTO;
   const slot = [];
@@ -58,8 +47,7 @@ function elencaSlot(dataOraInizio, dataOraFine, durataSlotMinuti) {
   return slot;
 }
 
-// Compone un istante a partire da un giorno "AAAA-MM-GG" e un orario "HH:MM",
-// interpretati nel fuso orario locale.
+// "AAAA-MM-GG" + "HH:MM" -> Date locale
 function componiData(giorno, orario) {
   const [anno, mese, numeroGiorno] = giorno.split('-').map(Number);
   const [ore, minuti] = orario.split(':').map(Number);

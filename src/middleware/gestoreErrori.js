@@ -7,8 +7,7 @@ const {
   ErroreConflitto
 } = require('../servizi/errori');
 
-// Corrispondenza fra gli errori del dominio e i codici di stato HTTP. La traduzione
-// avviene qui e solo qui: il livello di logica di business ignora l'esistenza di HTTP.
+// unico punto in cui gli errori di dominio diventano codici HTTP
 const CODICI = [
   [ErroreValidazione, 400],
   [ErroreAutenticazione, 401],
@@ -22,9 +21,7 @@ function codiceHttpPer(errore) {
   return corrispondenza ? corrispondenza[1] : 500;
 }
 
-// Racchiude un gestore asincrono inoltrando a Express le eccezioni che solleva:
-// senza questo adattatore una promessa rifiutata in un controllore non raggiungerebbe
-// il gestore degli errori e la richiesta resterebbe appesa.
+// Express 4 non inoltra le promesse rifiutate al gestore degli errori
 function catturaErrori(gestore) {
   return (richiesta, risposta, successivo) => {
     Promise.resolve(gestore(richiesta, risposta, successivo)).catch(successivo);
@@ -35,14 +32,10 @@ function rottaNonTrovata(richiesta, risposta) {
   risposta.status(404).json({ errore: 'Endpoint non trovato' });
 }
 
-// Middleware finale della catena: Express lo riconosce come gestore degli errori
-// dalla presenza di quattro parametri.
 function gestoreErrori(errore, richiesta, risposta, successivo) {
   const codice = codiceHttpPer(errore);
 
-  // Gli errori non previsti vengono registrati per intero: sono difetti da correggere,
-  // non condizioni del dominio. Al client si restituisce un messaggio generico per non
-  // esporre dettagli sull'implementazione.
+  // gli errori non previsti sono difetti: log completo, messaggio generico al client
   if (codice === 500) {
     console.error('Errore non gestito:', errore);
     return risposta.status(500).json({ errore: 'Errore interno del server' });

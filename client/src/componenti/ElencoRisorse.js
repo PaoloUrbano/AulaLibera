@@ -2,8 +2,7 @@ import React from 'react';
 
 import { formattaDurata } from '../formato';
 
-// Presenta le risorse restituite dal backend. L'elenco è già filtrato dal ruolo: qui
-// non si decide che cosa mostrare, si mostra ciò che il server ha ritenuto pertinente.
+// l'elenco arriva già filtrato per ruolo dal backend
 export default function ElencoRisorse({ risorse, selezionata, onSeleziona }) {
   if (risorse.length === 0) {
     return <p className="vuoto">Nessuna risorsa corrisponde ai criteri indicati.</p>;

@@ -23,9 +23,7 @@ export default function BarraNavigazione() {
           {puoPrenotare && <NavLink to="/">Prenota</NavLink>}
           {puoPrenotare && <NavLink to="/prenotazioni">Le mie prenotazioni</NavLink>}
 
-          {/* L'accesso all'area di gestione compare al solo amministratore. Nasconderlo
-              agli altri è una scelta di usabilità: l'autorizzazione resta quella
-              applicata dal backend su ogni singolo endpoint. */}
+          {/* visibile solo all'amministratore; l'autorizzazione vera è nel backend */}
           {eAmministratore && (
             <NavLink to="/amministrazione" title="Area di gestione">
               Gestione

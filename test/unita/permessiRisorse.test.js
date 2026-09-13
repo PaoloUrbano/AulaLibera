@@ -5,8 +5,6 @@ const { Aula, Laboratorio } = require('../../src/modelli/RisorsaPrenotabile');
 const servizioRisorse = require('../../src/servizi/servizioRisorse');
 const { ErroreAutorizzazione } = require('../../src/servizi/errori');
 
-// I documenti sono costruiti in memoria e mai salvati: la regola sui permessi non
-// interroga il database, quindi il test non ne ha bisogno.
 function creaUtente(ruolo, abilitazioniLaboratori = []) {
   return new Utente({
     nome: 'Nome',

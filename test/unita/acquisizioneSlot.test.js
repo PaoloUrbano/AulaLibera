@@ -1,6 +1,4 @@
-// Verifica in isolamento il meccanismo di acquisizione degli slot: i modelli sono
-// sostituiti da doppioni, così è possibile simulare l'errore di chiave duplicata che
-// MongoDB solleverebbe in caso di conflitto e osservare la compensazione.
+// modelli sostituiti da doppioni per poter simulare l'errore 11000
 jest.mock('../../src/modelli/Prenotazione', () => ({
   create: jest.fn(),
   deleteOne: jest.fn()
@@ -81,7 +79,6 @@ describe('Acquisizione degli slot alla creazione di una prenotazione', () => {
 
     const [documenti, opzioni] = Occupazione.insertMany.mock.calls[0];
 
-    // Due ore con slot da trenta minuti corrispondono a quattro slot.
     expect(documenti).toHaveLength(4);
     expect(documenti[0].slotInizio).toEqual(domaniAlle(9));
     expect(documenti[3].slotInizio).toEqual(domaniAlle(10, 30));
@@ -122,8 +119,6 @@ describe('Acquisizione degli slot alla creazione di una prenotazione', () => {
       .creaPrenotazione(utente, richiestaDiDueOre())
       .catch(() => undefined);
 
-    // La compensazione riporta il sistema allo stato precedente al tentativo: nessuno
-    // slot trattenuto e nessuna prenotazione orfana.
     expect(Occupazione.deleteMany).toHaveBeenCalledWith({
       prenotazione: IDENTIFICATIVO_PRENOTAZIONE
     });

@@ -16,10 +16,7 @@ const schemaUtente = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true },
     ruolo: { type: String, enum: RUOLI, required: true },
-
-    // Elenco dei laboratori il cui uso è stato abilitato all'utente dall'amministratore.
-    // È un array di riferimenti e non una collezione di associazioni: in un database
-    // documentale l'associazione molti-a-molti si modella così quando un lato è piccolo.
+    // laboratori ad accesso controllato aperti a questo utente dall'amministratore
     abilitazioniLaboratori: [
       { type: mongoose.Schema.Types.ObjectId, ref: 'RisorsaPrenotabile' }
     ]
@@ -27,8 +24,6 @@ const schemaUtente = new mongoose.Schema(
   { timestamps: true }
 );
 
-// La password in chiaro non viene mai memorizzata né trasmessa: entra nel modello solo
-// come argomento di questi due metodi, che incapsulano l'algoritmo di hashing.
 schemaUtente.statics.calcolaHashPassword = function (passwordInChiaro) {
   return bcrypt.hash(passwordInChiaro, 10);
 };
@@ -37,7 +32,7 @@ schemaUtente.methods.verificaPassword = function (passwordInChiaro) {
   return bcrypt.compare(passwordInChiaro, this.passwordHash);
 };
 
-// Rappresentazione destinata al client: esclude l'hash della password.
+// versione per il client, senza hash
 schemaUtente.methods.versionePubblica = function () {
   return {
     id: this._id,

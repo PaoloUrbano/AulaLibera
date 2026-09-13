@@ -21,7 +21,6 @@ describe('Rotte di autenticazione', () => {
 
     expect(risposta.status).toBe(201);
     expect(risposta.body.utente.email).toBe('anna.bianchi@poliba.it');
-    // La risposta non deve mai contenere l'hash della password.
     expect(risposta.body.utente.passwordHash).toBeUndefined();
   });
 

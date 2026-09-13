@@ -1,6 +1,3 @@
-/* Foglio di stile essenziale: l'interfaccia deve essere leggibile e usabile, non
-   elaborata. Nessun framework grafico, per non aggiungere dipendenze da giustificare. */
-
 :root {
   --colore-testo: #1c2733;
   --colore-tenue: #5a6b7c;
@@ -240,13 +237,7 @@ button:hover {
 
 /* ---------- Griglia oraria della giornata ---------- */
 
-/* Impianto della vista giorno dei calendari: una colonna di marcatori orari a sinistra
-   e, a destra, una banda per ogni intervallo prenotabile, di altezza proporzionale alla
-   durata. Gli orari sono scritti sulle linee che separano le bande, non dentro di esse:
-   e' questo che scioglie l'ambiguita' precedente, quando la casella etichettata 10:30
-   copriva il tempo fino alle 11:00 e per terminare alle 11:00 occorreva dedurre di
-   doverla scegliere. Sulla linea, l'orario appartiene al confine e la selezione si vede
-   terminare esattamente li'. */
+/* vista giorno: marcatori sulle linee di separazione, bande alte quanto la durata */
 .griglia-oraria {
   display: grid;
   grid-template-columns: 3.6rem 1fr;
@@ -260,7 +251,7 @@ button:hover {
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   color: var(--colore-tenue);
-  /* Solleva l'etichetta di meta' riga per centrarla sulla linea di confine. */
+  /* centrata sulla linea, non dentro la riga */
   transform: translateY(-0.55em);
 }
 
@@ -285,8 +276,6 @@ button:hover {
   color: var(--colore-testo);
 }
 
-/* La linea di inizio di ogni ora e' piu' marcata: da' il ritmo alla lettura, come le
-   ore piene nella vista giorno di un calendario. */
 .banda-ora {
   border-top-color: var(--colore-bordo);
 }
@@ -316,8 +305,7 @@ button:hover {
   color: var(--colore-accento);
 }
 
-/* La campitura a righe distingue l'occupato anche senza percepire il colore: la sola
-   tinta non basterebbe a chi ha difficolta' di distinzione cromatica. */
+/* a righe, non solo colorata: serve a chi non distingue bene le tinte */
 .banda-occupata {
   background: repeating-linear-gradient(
     45deg,
@@ -341,8 +329,6 @@ button:hover {
   color: #c2c9d0;
 }
 
-/* Etichetta scritta dentro la fascia scelta, che ne ripete gli estremi: la conferma
-   deve stare dove l'occhio gia' guarda, non soltanto nel riepilogo sotto la griglia. */
 .etichetta-fascia {
   font-variant-numeric: tabular-nums;
 }
@@ -372,8 +358,6 @@ button:hover {
   border: 1px solid var(--colore-bordo);
 }
 
-/* Enunciato dei vincoli della risorsa: sta sopra la griglia perche' va letto prima di
-   scegliere, non dopo aver ricevuto un errore. */
 .regola {
   margin: 0;
   padding: 0.5rem 0.75rem;

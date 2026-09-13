@@ -9,7 +9,6 @@ const rotte = express.Router();
 
 rotte.use(verificaToken);
 
-// L'amministratore è escluso dalla creazione: per regola di dominio non prenota.
 rotte.post(
   '/',
   verificaRuolo('studente', 'docente'),
@@ -24,8 +23,7 @@ rotte.get(
   catturaErrori(controllorePrenotazioni.tutte)
 );
 
-// L'annullamento è aperto a tutti i ruoli: il servizio verifica che chi lo richiede sia
-// il titolare della prenotazione oppure un amministratore.
+// aperto a tutti: è il servizio a controllare che sia il titolare o un amministratore
 rotte.patch('/:id/annullamento', catturaErrori(controllorePrenotazioni.annulla));
 
 rotte.patch(

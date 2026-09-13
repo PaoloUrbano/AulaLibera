@@ -82,8 +82,6 @@ export default function PaginaMiePrenotazioni() {
                 <td>{prenotazione.motivazione || '-'}</td>
                 <td>{prenotazione.stato}</td>
                 <td>
-                  {/* L'annullamento è proposto solo dove ha senso; il backend rifiuta
-                      comunque le transizioni di stato non ammesse. */}
                   {prenotazione.stato !== 'annullata' &&
                     prenotazione.stato !== 'conclusa' && (
                       <button type="button" onClick={() => annulla(prenotazione._id)}>

@@ -6,10 +6,8 @@ const CHIAVE_TOKEN = 'aulalibera.token';
 
 const ContestoAutenticazione = createContext(null);
 
-// Conserva utente e token per l'intera applicazione. Il token viene riposto nella
-// memoria del browser perché la sessione sopravviva al ricaricamento della pagina;
-// l'utente viene invece richiesto ogni volta al server, così che ruolo e abilitazioni
-// mostrati siano quelli correnti e non quelli del momento dell'accesso.
+// Il token sta in localStorage per sopravvivere al ricaricamento; l'utente
+// invece si richiede al server, così ruolo e abilitazioni sono quelli attuali.
 export function FornitoreAutenticazione({ children }) {
   const [utente, impostaUtente] = useState(null);
   const [inCaricamento, impostaInCaricamento] = useState(true);
@@ -27,7 +25,6 @@ export function FornitoreAutenticazione({ children }) {
       .profilo()
       .then((risposta) => impostaUtente(risposta.utente))
       .catch(() => {
-        // Token scaduto o non più valido: si torna allo stato di utente anonimo.
         localStorage.removeItem(CHIAVE_TOKEN);
         impostaToken(null);
       })

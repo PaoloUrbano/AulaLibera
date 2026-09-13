@@ -1,10 +1,7 @@
-// Unico punto del frontend che conosce il protocollo HTTP e i percorsi del backend:
-// i componenti chiamano funzioni con nomi di dominio e non costruiscono richieste.
+// unico punto del client che conosce i percorsi del backend
 
 const BASE = '/api';
 
-// Il token viene tenuto qui e impostato dal contesto di autenticazione, così che ogni
-// chiamata lo alleghi senza che i componenti debbano occuparsene.
 let tokenCorrente = null;
 
 export function impostaToken(token) {
@@ -33,8 +30,6 @@ async function richiedi(metodo, percorso, corpo) {
   const contenuto = await risposta.json().catch(() => ({}));
 
   if (!risposta.ok) {
-    // L'errore riporta il messaggio prodotto dal dominio sul server: è quello che
-    // l'utente deve leggere, non un messaggio inventato dal client.
     const errore = new Error(contenuto.errore || 'Errore imprevisto');
     errore.codice = risposta.status;
     throw errore;

@@ -9,15 +9,12 @@ const {
   ErroreNonTrovato
 } = require('./errori');
 
-// Ruoli che un utente può assegnarsi registrandosi: il ruolo di amministratore non è
-// autoassegnabile, viene creato dallo script di popolamento del database.
+// l'amministratore non si registra da solo, lo crea il seed
 const RUOLI_REGISTRABILI = ['studente', 'docente'];
 
 const LUNGHEZZA_MINIMA_PASSWORD = 8;
 
-// Il segreto è letto a ogni invocazione e non alla prima importazione del modulo:
-// così il valore usato è sempre quello dell'ambiente corrente, condizione necessaria
-// perché i test possano configurarlo autonomamente.
+// letto a ogni chiamata e non all'import, così i test possono impostarlo
 function segretoJwt() {
   const segreto = process.env.JWT_SEGRETO;
   if (!segreto) {
@@ -49,8 +46,6 @@ async function registra({ nome, cognome, email, password, ruolo }) {
 
   const emailNormalizzata = String(email).trim().toLowerCase();
 
-  // Il dominio ammesso è un parametro di configurazione e non una costante del codice,
-  // perché l'amministratore deve poterlo cambiare senza rilasciare una nuova versione.
   const configurazione = await servizioConfigurazione.ottieniConfigurazione();
   const dominio = configurazione.dominioEmailConsentito.toLowerCase();
   if (!emailNormalizzata.endsWith(dominio)) {
@@ -83,8 +78,8 @@ async function accedi({ email, password }) {
     email: String(email).trim().toLowerCase()
   });
 
-  // Lo stesso messaggio per utente inesistente e password errata: distinguere i due casi
-  // rivelerebbe quali email sono registrate nel sistema.
+  // stesso messaggio per utente inesistente e password errata, altrimenti si
+  // potrebbe scoprire quali email sono registrate
   const messaggioGenerico = 'Credenziali non valide';
 
   if (!utente) {
@@ -98,8 +93,6 @@ async function accedi({ email, password }) {
   return { token: generaToken(utente), utente };
 }
 
-// Il token trasporta identificativo e ruolo: sono i due dati che il middleware di
-// autorizzazione deve conoscere per ogni richiesta.
 function generaToken(utente) {
   return jwt.sign(
     { id: String(utente._id), ruolo: utente.ruolo },
@@ -116,9 +109,6 @@ function verificaToken(token) {
   }
 }
 
-// Il middleware ricarica l'utente dal database a ogni richiesta anziché fidarsi del
-// contenuto del token: ruolo e abilitazioni possono essere stati modificati
-// dall'amministratore dopo l'emissione del token.
 async function caricaUtente(idUtente) {
   const utente = await Utente.findById(idUtente);
   if (!utente) {

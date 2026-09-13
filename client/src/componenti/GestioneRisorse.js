@@ -23,8 +23,7 @@ const CAMPI_VUOTI = {
   richiedeAbilitazione: false
 };
 
-// Traduce il documento restituito dal server nei campi del modulo: l'elenco dei
-// software è un array sul server e una riga di testo separata da virgole nel modulo.
+// softwareInstallato: array sul server, testo separato da virgole nel modulo
 function daRisorsaACampi(risorsa) {
   return {
     ...CAMPI_VUOTI,
@@ -75,8 +74,6 @@ export default function GestioneRisorse() {
 
   const carica = useCallback(async () => {
     try {
-      // L'amministratore vede anche le risorse disattivate: sono le sole che può
-      // riattivare o eliminare.
       const risposta = await apiRisorse.elenca({ includiDisattivate: true });
       impostaElenco(risposta.risorse);
     } catch (problema) {

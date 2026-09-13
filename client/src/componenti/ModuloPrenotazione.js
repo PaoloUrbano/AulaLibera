@@ -7,16 +7,13 @@ import { prenotazioni, risorse as apiRisorse } from '../servizi/api';
 
 const MILLISECONDI_IN_UN_MINUTO = 60 * 1000;
 
-// Compone l'istante locale corrispondente a giorno e orario.
 function componiIstante(giorno, orario) {
   const [anno, mese, numeroGiorno] = giorno.split('-').map(Number);
   const [ore, minuti] = orario.split(':').map(Number);
   return new Date(anno, mese - 1, numeroGiorno, ore, minuti, 0, 0);
 }
 
-// Costruisce la giornata come sequenza di intervalli prenotabili, dall'apertura alla
-// chiusura. L'ultimo intervallo è quello che termina esattamente alla chiusura: uno che
-// la sforerebbe non viene proposto affatto.
+// una fascia per ogni intervallo fra apertura e chiusura; l'ultima finisce alla chiusura
 function costruisciFasce(configurazione, giorno, slotOccupati) {
   const apertura = componiIstante(giorno, configurazione.orarioApertura);
   const chiusura = componiIstante(giorno, configurazione.orarioChiusura);
@@ -38,7 +35,6 @@ function costruisciFasce(configurazione, giorno, slotOccupati) {
       inizio,
       oraInizio: formattaOra(istante),
       oraFine: formattaOra(istante + passo),
-      // Le ore piene reggono i marcatori e le linee più marcate della griglia.
       iniziaOra: inizio.getMinutes() === 0,
       occupato: occupati.has(istante),
       passato: istante < adesso
@@ -61,8 +57,6 @@ export default function ModuloPrenotazione({
 
   const passoMinuti = configurazione.durataSlotMinuti;
 
-  // Le durate ammesse dalla risorsa, convertite nel numero di intervalli che occupano.
-  // È una grandezza interna al calcolo: all'utente vengono mostrate solo come durate.
   const slotMinimi = Math.ceil(risorsa.durataMinimaMinuti / passoMinuti);
   const slotMassimi = Math.floor(risorsa.durataMassimaMinuti / passoMinuti);
 
@@ -124,8 +118,7 @@ export default function ModuloPrenotazione({
         onPrenotata();
       }
     } catch (problema) {
-      // Il conflitto è la sola risposta che rende obsoleta la griglia mostrata: qualcuno
-      // ha prenotato mentre l'utente stava scegliendo, e va ricaricata.
+      // 409: qualcuno ha prenotato nel frattempo, la griglia va ricaricata
       if (problema.codice === 409) {
         impostaSelezione({ inizio: null, fine: null });
         const aggiornata = await apiRisorse
@@ -139,10 +132,8 @@ export default function ModuloPrenotazione({
     }
   }
 
-  // La durata degli intervalli e le durate della risorsa sono impostate dall'amministratore
-  // in due schermate diverse e possono risultare incompatibili: con intervalli da 45
-  // minuti una risorsa che ammette al massimo un'ora non avrebbe alcuna durata valida.
-  // Meglio dirlo che lasciare l'utente davanti a una griglia in cui nulla si può scegliere.
+  // può succedere se l'amministratore imposta durate incompatibili con lo slot
+  // (es. slot da 45' e massimo 60'): meglio dirlo che mostrare una griglia tutta spenta
   if (slotMassimi < slotMinimi) {
     return (
       <div className="riquadro">

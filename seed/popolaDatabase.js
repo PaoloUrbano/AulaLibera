@@ -12,12 +12,10 @@ const Prenotazione = require('../src/modelli/Prenotazione');
 const Occupazione = require('../src/modelli/Occupazione');
 const Configurazione = require('../src/modelli/Configurazione');
 
-// Password comune a tutti gli utenti di esempio: è un ambiente di dimostrazione, e
-// averla unica rende la prova del sistema immediata. In esercizio non esisterebbe.
+// una sola password per tutti gli utenti di prova
 const PASSWORD_DI_ESEMPIO = 'password-di-prova';
 
-// I nomi che seguono sono dati, non modello: descrivono il patrimonio del Politecnico
-// di Bari perché la dimostrazione sia credibile, e non influenzano gli schemi.
+// laboratori e aule reali del Poliba: sono dati di esempio, non fanno parte del modello
 const LABORATORI = [
   {
     codice: 'DMMM-PRRE',
@@ -237,8 +235,7 @@ async function popola() {
   await creaUtente('Giuseppe', 'De Santis', 'g.desantis@poliba.it', 'docente');
   await creaUtente('Anna', 'Loiacono', 'a.loiacono@poliba.it', 'docente');
 
-  // Tre studenti, di cui uno solo abilitato a un laboratorio ad accesso controllato:
-  // la differenza serve a mostrare in sede di prova il controllo di abilitazione.
+  // uno studente abilitato e due no, per mostrare il controllo di abilitazione
   const laboratorioControllato = laboratori.find(
     (laboratorio) => laboratorio.codice === 'DEI-AROB'
   );

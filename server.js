@@ -12,12 +12,9 @@ const { rottaNonTrovata, gestoreErrori } = require('./src/middleware/gestoreErro
 
 const CARTELLA_FRONTEND = path.join(__dirname, 'client', 'build');
 
-// Fuso orario in cui vanno interpretati gli orari del dominio.
 const FUSO_ORARIO_ATENEO = 'Europe/Rome';
 
-// La costruzione dell'applicazione è separata dall'avvio del server e dalla connessione
-// al database: i test di integrazione compongono l'applicazione contro un'istanza di
-// MongoDB in memoria, senza mettersi in ascolto su una porta.
+// separata dall'avvio così i test la usano con un MongoDB in memoria, senza porta
 function creaApplicazione() {
   const applicazione = express();
 
@@ -34,12 +31,9 @@ function creaApplicazione() {
 
   applicazione.use('/api', rottaNonTrovata);
 
-  // Il frontend compilato viene servito come file statico dallo stesso processo:
-  // un solo servizio da distribuire e nessuna richiesta cross-origin da configurare.
   applicazione.use(express.static(CARTELLA_FRONTEND));
 
-  // Le rotte del client sono gestite dal router di React: ogni percorso non riconosciuto
-  // restituisce la pagina principale, che si occuperà di interpretarlo.
+  // i percorsi non-api li gestisce il router di React
   applicazione.get('*', (richiesta, risposta) => {
     risposta.sendFile(path.join(CARTELLA_FRONTEND, 'index.html'));
   });
@@ -49,8 +43,7 @@ function creaApplicazione() {
   return applicazione;
 }
 
-// L'avvio attende che il database sia raggiungibile: in ambiente Docker il contenitore
-// dell'applicazione può partire prima che MongoDB sia pronto ad accettare connessioni.
+// in Docker il contenitore dell'api può partire prima che Mongo accetti connessioni
 async function connettiAlDatabase(urlMongo, tentativiResidui = 10) {
   try {
     await mongoose.connect(urlMongo);
@@ -64,20 +57,17 @@ async function connettiAlDatabase(urlMongo, tentativiResidui = 10) {
   }
 }
 
-// La creazione degli indici viene attesa esplicitamente prima di accettare richieste:
-// l'indice univoco su Occupazione è ciò che garantisce la mutua esclusione, e servire
-// richieste prima che esista significherebbe non avere alcuna garanzia.
+// senza l'indice univoco su Occupazione non c'è mutua esclusione: va atteso
+// prima di accettare richieste
 async function preparaIndici() {
   await Promise.all(
     Object.values(mongoose.models).map((modello) => modello.init())
   );
 }
 
-// L'orario di apertura dell'ateneo è un orario di Bari, non un istante UTC: le regole
-// di dominio sugli orari confrontano ore locali. Se il processo girasse in un fuso
-// diverso da quello dell'ateneo respingerebbe come fuori orario prenotazioni valide —
-// per esempio, con il server in UTC, le 09:00 arrivate dal browser verrebbero lette
-// come le 07:00. La dipendenza è dichiarata nell'immagine e verificata qui all'avvio.
+// Apertura e chiusura sono orari di Bari e le regole confrontano ore locali: con il
+// processo in UTC le 09:00 del browser diventano le 07:00 e la prenotazione viene
+// respinta. TZ è impostata nell'immagine, qui si controlla soltanto.
 function verificaFusoOrario() {
   const fusoAttivo = Intl.DateTimeFormat().resolvedOptions().timeZone;
 

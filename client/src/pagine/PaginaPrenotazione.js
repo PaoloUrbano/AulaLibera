@@ -14,9 +14,7 @@ function oggi() {
   return `${adesso.getFullYear()}-${mese}-${giorno}`;
 }
 
-// Pagina condivisa da studenti e docenti. Il componente è il medesimo per i due ruoli:
-// a cambiare è soltanto l'elenco delle risorse, che il backend restituisce già filtrato
-// in base a ciò che il ruolo consente di prenotare.
+// stessa pagina per studente e docente: cambia solo l'elenco che arriva dal backend
 export default function PaginaPrenotazione() {
   const [filtri, impostaFiltri] = useState({
     tipoRisorsa: '',
@@ -45,9 +43,7 @@ export default function PaginaPrenotazione() {
       const risposta = await apiRisorse.elenca(filtri);
       impostaRisorse(risposta.risorse);
 
-      // Se la risorsa scelta non compare più fra quelle disponibili, la selezione
-      // decade: mantenerla porterebbe l'utente a inviare una richiesta destinata a
-      // essere respinta.
+      // se la risorsa scelta è sparita dall'elenco, la selezione decade
       impostaSelezionata((precedente) =>
         precedente &&
         risposta.risorse.some((risorsa) => risorsa._id === precedente._id)

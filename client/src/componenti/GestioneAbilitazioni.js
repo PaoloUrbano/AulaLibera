@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Avviso from './Avviso';
 import { risorse as apiRisorse } from '../servizi/api';
 
-// Governa l'associazione fra studenti e laboratori ad accesso controllato. I laboratori
-// che non richiedono abilitazione non compaiono: per essi l'associazione non ha effetto.
 export default function GestioneAbilitazioni() {
   const [studenti, impostaStudenti] = useState([]);
   const [laboratori, impostaLaboratori] = useState([]);

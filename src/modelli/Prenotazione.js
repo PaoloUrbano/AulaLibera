@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
 
+// quattro valori fissi: un enum, non una collezione a parte
 const STATI = ['richiesta', 'confermata', 'annullata', 'conclusa'];
 
-// Gli stati sono quattro valori fissi del dominio, non entità con vita propria:
-// una collezione dedicata introdurrebbe una join senza aggiungere informazione.
 const schemaPrenotazione = new mongoose.Schema(
   {
     risorsa: {
@@ -24,13 +23,10 @@ const schemaPrenotazione = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Le due interrogazioni più frequenti sono "le prenotazioni di un utente" e
-// "le prenotazioni di una risorsa in un intervallo": entrambe sono servite da un indice.
 schemaPrenotazione.index({ utente: 1, dataOraInizio: -1 });
 schemaPrenotazione.index({ risorsa: 1, dataOraInizio: 1 });
 
-// Una prenotazione occupa la risorsa finché non viene annullata: gli stati "richiesta",
-// "confermata" e "conclusa" sono tutti vincolanti ai fini della mutua esclusione.
+// tutto tranne "annullata" tiene occupata la risorsa
 schemaPrenotazione.statics.STATI_ATTIVI = ['richiesta', 'confermata', 'conclusa'];
 
 schemaPrenotazione.methods.eAttiva = function () {

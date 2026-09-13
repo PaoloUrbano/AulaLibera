@@ -2,25 +2,17 @@ import React, { Fragment, useState } from 'react';
 
 import { formattaDurata } from '../formato';
 
-// Griglia oraria della giornata, costruita sull'impianto della vista giorno dei
-// calendari: una colonna di marcatori orari e, accanto, una banda per ogni intervallo
-// prenotabile, alta in proporzione alla durata.
+// Vista giorno: marcatori orari a sinistra e una banda per ogni fascia. Gli orari
+// stanno sulle linee di separazione e non dentro le bande, come nei calendari:
+// così la selezione si vede iniziare su un orario e finire su un altro, e non
+// serve dedurre che la banda "10:30" arriva in realtà alle 11:00.
 //
-// La scelta che conta è dove stanno scritti gli orari. Etichettare ogni riquadro con la
-// propria ora di inizio obbligava a un passaggio mentale — la fascia marcata 10:30
-// arriva fino alle 11:00, quindi per finire alle 11:00 devo scegliere quella —, mentre
-// scrivere gli orari sulle linee di separazione li rende quello che sono: confini. La
-// selezione si vede allora cominciare su una linea e terminare su un'altra, e l'ora di
-// fine è leggibile senza calcoli.
-//
-// Nei testi rivolti a chi prenota non compaiono né "slot" né "casella": si parla solo di
-// orari e durate, che sono i termini in cui il problema si presenta all'utente.
+// I testi per l'utente parlano solo di orari e durate, mai di slot o bande.
 
 function eDisponibile(fascia) {
   return !fascia.occupato && !fascia.passato;
 }
 
-// La prenotazione dev'essere continua: non può scavalcare un orario già occupato.
 function intervalloLibero(fasce, inizio, fine) {
   for (let indice = inizio; indice <= fine; indice += 1) {
     if (!eDisponibile(fasce[indice])) {
@@ -41,8 +33,7 @@ function fineAmmessa(fasce, inizio, indice, minimo, massimo) {
   return intervalloLibero(fasce, inizio, indice);
 }
 
-// Un orario può fare da inizio solo se da lì c'è almeno la durata minima libera di
-// seguito: proporne uno senza sbocco porterebbe a una richiesta respinta.
+// un inizio va proposto solo se da lì c'è la durata minima libera di seguito
 function inizioAmmesso(fasce, indice, minimo) {
   const ultimo = indice + minimo - 1;
   return ultimo < fasce.length && intervalloLibero(fasce, indice, ultimo);
@@ -64,8 +55,6 @@ export default function GrigliaOraria({
 
   function avviaSelezione(indice) {
     if (!inizioAmmesso(fasce, indice, minimo)) {
-      // I due motivi per cui un orario non può fare da inizio sono diversi e vanno detti
-      // in modo diverso: o la giornata finisce prima, o qualcuno ha già prenotato.
       const oltreLaChiusura = indice + minimo - 1 >= fasce.length;
       const durataMinima = formattaDurata(durataMinimaMinuti);
 
@@ -90,8 +79,7 @@ export default function GrigliaOraria({
       return;
     }
 
-    // Un clic sulla prima fascia annulla la scelta: è il modo più prevedibile per
-    // ricominciare da capo.
+    // clic sull'inizio = annulla la scelta
     if (indice === selezione.inizio) {
       onAvviso('');
       onSelezione({ inizio: null, fine: null });
@@ -107,8 +95,7 @@ export default function GrigliaOraria({
     avviaSelezione(indice);
   }
 
-  // Fine che si otterrebbe fermandosi dove si trova il puntatore: mostra in anticipo
-  // dove arriverebbe la prenotazione, senza doverlo scoprire cliccando.
+  // anteprima della fine mentre il puntatore si muove
   const fineAnteprima =
     haInizio &&
     anteprima !== null &&
@@ -147,10 +134,8 @@ export default function GrigliaOraria({
     return `${base}${ultima} banda-libera`;
   }
 
-  // Testo scritto dentro la banda. Resta quasi sempre vuoto: gli orari li portano i
-  // marcatori, e riempire ogni banda renderebbe illeggibile la giornata. Compare dove
-  // serve una conferma — sulla fascia scelta — o una spiegazione — sul primo intervallo
-  // di una serie occupata.
+  // testo dentro la banda: solo sulla fascia scelta e all'inizio di una serie occupata,
+  // altrimenti la giornata diventa illeggibile
   function testoDi(indice) {
     const fascia = fasce[indice];
 
@@ -188,8 +173,6 @@ export default function GrigliaOraria({
       <div className="griglia-oraria" onMouseLeave={() => impostaAnteprima(null)}>
         {fasce.map((fascia, indice) => (
           <Fragment key={fascia.oraInizio}>
-            {/* Il marcatore compare a ogni ora piena e viene collocato sulla linea che
-                separa le due bande, non dentro l'una o l'altra. */}
             {fascia.iniziaOra && (
               <span className="marcatore" style={{ gridRow: indice + 1 }}>
                 {fascia.oraInizio}
@@ -212,9 +195,7 @@ export default function GrigliaOraria({
           </Fragment>
         ))}
 
-        {/* Ultima linea della giornata: senza questo marcatore l'orario di chiusura
-            resterebbe l'unico confine non scritto, proprio quello su cui termina una
-            prenotazione fatta a fine giornata. */}
+        {/* la chiusura è un confine come gli altri e va scritto anche lui */}
         <span
           className="marcatore marcatore-chiusura"
           style={{ gridRow: fasce.length + 1 }}

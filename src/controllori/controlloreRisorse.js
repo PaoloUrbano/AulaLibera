@@ -1,8 +1,5 @@
 const servizioRisorse = require('../servizi/servizioRisorse');
 
-// Elenco filtrato. L'utente autenticato viene passato al servizio perché sia il livello
-// di logica di business a decidere che cosa può vedere: il controllore non conosce le
-// regole sui ruoli.
 async function elenca(richiesta, risposta) {
   const risorse = await servizioRisorse.elencaRisorse(
     {

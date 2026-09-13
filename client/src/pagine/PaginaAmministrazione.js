@@ -24,8 +24,6 @@ const SEZIONI = [
   }
 ];
 
-// Area riservata all'amministratore, raggiungibile solo dal collegamento che compare
-// al suo ruolo. Raccoglie le quattro funzioni di gestione previste dai casi d'uso.
 export default function PaginaAmministrazione() {
   const [sezioneAttiva, impostaSezioneAttiva] = useState('risorse');
 

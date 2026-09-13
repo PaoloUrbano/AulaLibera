@@ -1,8 +1,6 @@
 const { verificaVincoliTemporali } = require('../../src/servizi/servizioPrenotazioni');
 const { ErroreValidazione } = require('../../src/servizi/errori');
 
-// I vincoli temporali sono logica pura: non toccano il database e si verificano
-// costruendo direttamente la risorsa e la configurazione come oggetti semplici.
 const configurazione = {
   durataSlotMinuti: 30,
   anticipoMassimoGiorni: 30,
@@ -15,8 +13,6 @@ const risorsa = {
   durataMassimaMinuti: 240
 };
 
-// Costruisce un istante a distanza di giorni dalla data odierna, così che i test non
-// dipendano dal giorno in cui vengono eseguiti.
 function fraGiorni(giorni, ore, minuti = 0) {
   const istante = new Date();
   istante.setDate(istante.getDate() + giorni);

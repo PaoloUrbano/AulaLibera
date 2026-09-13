@@ -144,8 +144,7 @@ describe('Gestione delle risorse riservata all amministratore', () => {
     expect(risposta.body.risorsa.attiva).toBe(false);
   });
 
-  // Nascondere un comando nell'interfaccia non è autorizzazione: la richiesta HTTP
-  // costruita a mano deve essere respinta dal middleware del backend.
+  // nascondere il pulsante non basta: la richiesta a mano va respinta dal backend
   test('rifiuta con 403 la creazione di una risorsa richiesta da uno studente', async () => {
     const risposta = await richiesta
       .post('/api/risorse')

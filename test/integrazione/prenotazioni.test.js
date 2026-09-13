@@ -53,7 +53,6 @@ describe('Creazione di una prenotazione', () => {
   test('la prenotazione occupa uno slot per ogni intervallo elementare coperto', async () => {
     await prenota(studente, aulaStudio, 9, 11);
 
-    // Due ore con la granularità predefinita di trenta minuti sono quattro slot.
     const occupazioni = await Occupazione.find({ risorsa: aulaStudio._id });
     expect(occupazioni).toHaveLength(4);
   });

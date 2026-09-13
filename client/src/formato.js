@@ -1,7 +1,3 @@
-// Funzioni di formattazione condivise fra i componenti. Esprimere le durate in ore e
-// minuti anziché in soli minuti evita che l'utente debba fare il conto da sé: è la
-// stessa informazione, in una forma che non richiede interpretazione.
-
 export function formattaDurata(minuti) {
   const ore = Math.floor(minuti / 60);
   const resto = minuti % 60;
